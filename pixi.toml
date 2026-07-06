@@ -1,0 +1,85 @@
+# SPDX-FileCopyrightText: 2026 CERN for the benefit of the SHiP Collaboration
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
+[workspace]
+name = "aegir-genie"
+description = "GENIE neutrino event generation plugin for the aegir simulation framework"
+channels = [
+  # Local channel with the not-yet-published genie package.
+  # TODO: drop once genie is published to prefix.dev/ship.
+  "file:///home/olantwin/Projects/SHiP/ship-conda-recipes-genie/output",
+  "https://prefix.dev/ship",
+  "conda-forge",
+]
+platforms = ["linux-64"]
+requires-pixi = ">=0.68"
+
+[dependencies]
+# SHiP/HEP packages (prefix.dev/ship + conda-forge)
+shipdatamodel = "*"
+phlex = ">=0.3.0"
+root = ">=6.40"
+# phlex/shipdatamodel are C++23 — pull the matching ROOT build variant.
+# NOTE: the genie package is built against the C++20 ROOT variant
+# (root_cxx_standard ==20), which conflicts with phlex's ==23 pin, so genie
+# lives in the separate `genie` environment below and CMake links its
+# libraries from that prefix. Revisit once a C++23-compatible genie build is
+# published to prefix.dev/ship.
+root_cxx_standard = "==23"
+random123 = "*"
+libjsonnet = "*"
+
+# C++ libraries (phlex's cmake config lacks find_dependency for these)
+libboost-devel = "*"
+tbb-devel = "*"
+spdlog = "*"
+# GENIE's public headers include log4cpp; the headers must come from this
+# environment (the genie env's include/ also carries the C++20 ROOT headers,
+# which must not shadow the default ROOT). The library itself is linked from
+# the genie env so it matches the GENIE build.
+log4cpp = "*"
+# conda-forge log4cpp 1.1.4 underdeclares its libnsl runtime dependency.
+libnsl = "*"
+
+# Build tools
+cmake = ">=3.27"
+ninja = "*"
+cxx-compiler = "*"
+
+# The GENIE package. Kept out of the default environment because of the
+# root_cxx_standard conflict described above; `no-default-feature` makes this
+# a minimal, independently solvable environment. GENIE's link-time
+# dependencies (log4cpp, libxml2, lhapdf, gsl, pythia6, rootegpythia6 — its
+# shared libraries do not record their own dependencies) arrive here as run
+# dependencies of genie, and CMake links them from this prefix so they match
+# the GENIE build exactly.
+[feature.genie.dependencies]
+genie = ">=3.6.2"
+# conda-forge log4cpp 1.1.4 (pulled in by genie) underdeclares its libnsl
+# runtime dependency.
+libnsl = "*"
+
+[environments]
+default = { solve-group = "default" }
+genie = { features = ["genie"], no-default-feature = true }
+
+[activation]
+scripts = ["activate.sh"]
+
+[tasks]
+# The genie environment only provides files (headers, libraries, splines
+# infrastructure); no tasks run in it, so install it explicitly for CMake.
+install-genie-env = "pixi install -e genie"
+configure = { cmd = """
+cmake -S . -B build -G Ninja \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_INSTALL_PREFIX=$CONDA_PREFIX \
+    -DCMAKE_INSTALL_LIBDIR=lib \
+    -DCMAKE_PREFIX_PATH=$CONDA_PREFIX \
+    -DGENIE_PREFIX=$PIXI_PROJECT_ROOT/.pixi/envs/genie \
+""", depends-on = ["install-genie-env"] }
+build = { cmd = "cmake --build build -j", depends-on = ["configure"] }
+install = { cmd = "cmake --install build", depends-on = ["build"] }
+test = { cmd = "ctest --test-dir build --output-on-failure", depends-on = ["build"] }
+clean = "rm -rf build"
