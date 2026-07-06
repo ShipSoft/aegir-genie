@@ -44,15 +44,17 @@ plugin.
 |---|---|
 | `pixi install` | works |
 | `genie_source` plugin | compiles and links against the GENIE 3.06.02 conda package |
+| `gevgen_ship` app | compiles and links; `--help` and config validation work |
 | `ShipFluxDriver` (flux-file reading, unit conversions, exposure accounting) | works, unit-tested (`pixi run test`) |
 | constructor-time config validation | works, unit-tested |
 | event generation (`GMCJDriver::GenerateEvent`) | **blocked — no cross-section splines packaged yet** (see below) |
 
-## Plugins
+## Plugins and tools
 
-| Plugin | Type | Description |
+| Name | Type | Description |
 |--------|------|-------------|
-| `genie_source` | Source | Embedded GENIE: flux × splines × TGeo geometry → `MCParticle` vectors |
+| `genie_source` | phlex source | Embedded GENIE: flux × splines × TGeo geometry → `MCParticle` vectors |
+| `gevgen_ship` | CLI app | Same driver assembly, native GHEP output for validation (no phlex) |
 
 Configuration keys (see `workflows/genie_st.jsonnet` for a full example):
 
@@ -111,6 +113,38 @@ output plugins in the example workflow come from aegir: point
 `PHLEX_PLUGIN_PATH` at an aegir build/install as well, or install the aegir
 conda package into this environment.
 
+## Validating the embedded source: `gevgen_ship`
+
+The plugin's physics must be checkable independently of phlex. `gevgen_ship`
+is a plain command-line generator that assembles the **identical** machinery
+(`src/genie_driver_setup.hpp`: same `ShipFluxDriver`, `ROOTGeomAnalyzer`,
+`GMCJDriver` settings, same per-event Philox reseeding — identical config and
+seed give the same event sequence in both), but writes native GENIE GHEP
+output via `genie::NtpWriter`:
+
+```sh
+pixi run ./build/gevgen_ship -f nu_flux.root -g ship.gdml -x gxspl-ship.xml \
+    -n 1000 -o genie_events            # -> genie_events.0.ghep.root
+pixi run gntpc -i genie_events.0.ghep.root -f rootracker
+```
+
+(`pixi run install` puts `gevgen_ship` on the environment's PATH.)
+
+The rootracker file reads back through aegir's `genie_reader_source`, so the
+two paths compare apples to apples:
+
+- **embedded**: `genie_source` → `MCParticle` → Geant4 (this repo), and
+- **file-based**: `gevgen_ship` → `gntpc -f rootracker` →
+  `genie_reader_source` → `MCParticle` → Geant4 (aegir only),
+
+with the same flux, geometry, tune and splines — differences isolate the
+in-situ integration rather than the physics. `gevgen_ship` prints its
+normalisation at the end (flux rays used, `GlobProbScale`, POT equivalent =
+fraction of the flux file consumed × its POT), so generated samples carry
+their exposure. `gevgen_ship --help` lists all options; `--dry-run` stops
+after `GMCJDriver::Configure()` to check tune/splines/geometry/flux wiring
+without generating.
+
 ## Remaining work for first generated events
 
 1. **Cross-section splines** — the hard blocker. Package `gmkspl` output for
@@ -127,8 +161,9 @@ conda package into this environment.
    geometry via `G4GDMLParser`, aegir plan Phase 3) so GENIE's TGeo import
    and Geant4 track the identical geometry.
 5. Validate against the `genie_reader_source` path (same flux + geometry
-   through `gevgen_fnal`): vertex material/z distributions, energy spectra,
-   final-state multiplicities (aegir plan, Phase 4).
+   through `gevgen_ship` + `gntpc -f rootracker`, see above): vertex
+   material/z distributions, energy spectra, final-state multiplicities
+   (aegir plan, Phase 4).
 
 Follow-ups beyond first events: POT/exposure data product (needs a data-model
 addition), unweighted flux generation (accept–reject on ray weights),

@@ -187,6 +187,17 @@ target_link_libraries(
 )
 target_include_directories(genie_source PRIVATE ${Random123_INCLUDE_DIR})
 
+# Standalone generator app: same driver assembly as the plugin, native GHEP
+# output for the gntpc/genie_reader_source validation path. No phlex.
+add_executable(
+    gevgen_ship
+    src/gevgen_ship.cpp
+    src/genie_driver_setup.cpp
+    src/ship_flux_driver.cpp
+)
+target_link_libraries(gevgen_ship PRIVATE ROOT::ROOTNTuple ROOT::Gdml GENIE::GENIE)
+target_include_directories(gevgen_ship PRIVATE ${Random123_INCLUDE_DIR})
+
 # Standalone flux-driver test: no phlex, no GMCJDriver, no splines — this
 # runs today (see tests/flux_driver_test.cpp).
 add_executable(flux_driver_test tests/flux_driver_test.cpp
@@ -204,6 +215,7 @@ target_include_directories(
 # Install
 include(GNUInstallDirs)
 install(TARGETS genie_source LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
+install(TARGETS gevgen_ship RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 install(DIRECTORY workflows/ DESTINATION share/aegir-genie/workflows)
 
 # Tests
