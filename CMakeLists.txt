@@ -48,11 +48,10 @@ find_path(Random123_INCLUDE_DIR Random123/philox.h REQUIRED)
 
 # ── GENIE ────────────────────────────────────────────────────────────────────
 # GENIE has no CMake config; create an imported target from genie-config
-# (mirroring aegir's pythia8-config pattern). GENIE lives in its own pixi
-# environment (see pixi.toml for the root_cxx_standard conflict), so pass
-# -DGENIE_PREFIX=<env prefix> — the pixi `configure` task does this.
+# (mirroring aegir's pythia8-config pattern). By default genie-config is
+# located on PATH (the pixi environment); pass -DGENIE_PREFIX=<prefix> to
+# use an out-of-environment GENIE installation instead.
 if(NOT GENIE_PREFIX)
-    # Fall back to locating genie-config on PATH (e.g. a single merged env).
     find_program(GENIE_CONFIG genie-config REQUIRED)
     get_filename_component(GENIE_BINDIR ${GENIE_CONFIG} DIRECTORY)
     get_filename_component(GENIE_PREFIX ${GENIE_BINDIR} DIRECTORY)

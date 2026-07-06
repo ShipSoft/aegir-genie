@@ -42,7 +42,7 @@ plugin.
 
 | Piece | State |
 |---|---|
-| `pixi install` (both environments) | works |
+| `pixi install` | works |
 | `genie_source` plugin | compiles and links against the GENIE 3.06.02 conda package |
 | `ShipFluxDriver` (flux-file reading, unit conversions, exposure accounting) | works, unit-tested (`pixi run test`) |
 | constructor-time config validation | works, unit-tested |
@@ -93,15 +93,11 @@ pixi run build   # configure + build (plugin and tests)
 pixi run test    # standalone flux-driver / config-validation checks
 ```
 
-Two pixi environments are involved (this is a temporary wart): the `genie`
-conda package is built against the C++20 ROOT variant
-(`root_cxx_standard ==20`), while phlex 0.3.0 requires the C++23 variant, so
-the two cannot share an environment. The `genie` environment holds the GENIE
-package; CMake links its libraries from that prefix (they record no
-dependencies of their own, so all of GENIE's transitive libraries —
-log4cpp, libxml2, LHAPDF, GSL, Pythia6, ROOT's EGPythia6 — are linked
-explicitly). Once a C++23-compatible GENIE build is published, collapse this
-back into a single environment.
+The `genie` conda package (pythia6-hadronization variant, built against the
+C++23 ROOT like phlex) lives in the same pixi environment as everything
+else. GENIE's shared libraries record no dependencies of their own, so all
+of its transitive libraries — log4cpp, libxml2, LHAPDF, GSL, Pythia6,
+ROOT's EGPythia6 — are linked explicitly (see `CMakeLists.txt`).
 
 Until the genie package is published to `prefix.dev/ship`, `pixi.toml`
 points at a local channel
