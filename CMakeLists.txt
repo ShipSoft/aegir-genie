@@ -118,10 +118,10 @@ foreach(lib IN LISTS GENIE_LIBRARIES)
     list(APPEND GENIE_LIBRARY_FILES ${lib_file})
 endforeach()
 
-# GENIE's public headers (Messenger.h) include log4cpp headers. They must
-# come from the default environment: adding ${GENIE_PREFIX}/include would
-# also expose that environment's C++20 ROOT headers, shadowing the default
-# ROOT. The log4cpp *library* is still linked from the GENIE prefix below.
+# GENIE's public headers (Messenger.h) include log4cpp headers; only
+# include/GENIE and the log4cpp include dir go on the include path — never
+# ${GENIE_PREFIX}/include wholesale, which would also expose whatever ROOT
+# headers live in that prefix.
 find_path(LOG4CPP_INCLUDE_DIR log4cpp/Category.hh REQUIRED)
 
 # GENIE's underlinked libraries need these resolved at link time; take them
@@ -169,10 +169,13 @@ target_link_libraries(
 # ── targets ──────────────────────────────────────────────────────────────────
 
 # Phlex plugin: the embedded GENIE event generator source.
-add_library(genie_source MODULE src/genie_source.cpp src/ship_flux_driver.cpp)
-# ROOT targets are listed before GENIE::GENIE so the default environment's
-# library directory precedes the GENIE prefix (which also holds a C++20 ROOT
-# build) in the generated RPATH.
+add_library(
+    genie_source
+    MODULE
+    src/genie_source.cpp
+    src/genie_driver_setup.cpp
+    src/ship_flux_driver.cpp
+)
 target_link_libraries(
     genie_source
     PRIVATE

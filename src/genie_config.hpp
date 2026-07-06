@@ -2,10 +2,12 @@
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-// genie_config.hpp — configuration for the embedded GENIE source
+// genie_config.hpp — configuration for the GENIE driver assembly
 //
-// Kept as a plain struct with a validate() member so the checks are unit
-// testable without loading the phlex plugin (see tests/flux_driver_test.cpp).
+// Shared by the genie_source plugin and the standalone gevgen_ship app (via
+// genie_driver_setup.hpp). Kept as a plain struct with a validate() member so
+// the checks are unit testable without loading the phlex plugin (see
+// tests/flux_driver_test.cpp).
 // Validation runs before any GENIE singleton is touched: several GENIE init
 // helpers call exit() on bad input rather than throwing, so failing early
 // with a clear message is the only way to surface configuration errors.
@@ -29,21 +31,23 @@ struct GenieSourceConfig {
   // file exists it is loaded, otherwise it is computed and saved there.
   std::string max_path_lengths_file;
 
-  void validate() const {
+  // `context` prefixes the error messages ("genie_source", "gevgen_ship").
+  void validate(std::string const& context = "genie_source") const {
     namespace fs = std::filesystem;
     if (tune.empty())
-      throw std::runtime_error("genie_source: 'tune' must not be empty");
+      throw std::runtime_error(context + ": 'tune' must not be empty");
     if (seed <= 0)
       throw std::runtime_error(
-          "genie_source: 'seed' must be > 0 (GENIE ignores non-positive "
-          "seeds), got " +
+          context +
+          ": 'seed' must be > 0 (GENIE ignores non-positive seeds), got " +
           std::to_string(seed));
-    auto require_file = [](std::string const& key, std::string const& path) {
+    auto require_file = [&context](std::string const& key,
+                                   std::string const& path) {
       if (path.empty())
-        throw std::runtime_error("genie_source: config key '" + key +
+        throw std::runtime_error(context + ": config key '" + key +
                                  "' is required");
       if (!fs::exists(path))
-        throw std::runtime_error("genie_source: " + key + " '" + path +
+        throw std::runtime_error(context + ": " + key + " '" + path +
                                  "' does not exist");
     };
     require_file("splines", spline_file);
@@ -53,10 +57,10 @@ struct GenieSourceConfig {
       // Will be created after the geometry scan — its directory must exist.
       auto const dir = fs::path{max_path_lengths_file}.parent_path();
       if (!dir.empty() && !fs::is_directory(dir))
-        throw std::runtime_error(
-            "genie_source: cannot create max_path_lengths_file '" +
-            max_path_lengths_file + "': directory '" + dir.string() +
-            "' does not exist");
+        throw std::runtime_error(context +
+                                 ": cannot create max_path_lengths_file '" +
+                                 max_path_lengths_file + "': directory '" +
+                                 dir.string() + "' does not exist");
     }
   }
 };
