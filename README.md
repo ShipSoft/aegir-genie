@@ -99,11 +99,6 @@ else. GENIE's shared libraries record no dependencies of their own, so all
 of its transitive libraries — log4cpp, libxml2, LHAPDF, GSL, Pythia6,
 ROOT's EGPythia6 — are linked explicitly (see `CMakeLists.txt`).
 
-Until the genie package is published to `prefix.dev/ship`, `pixi.toml`
-points at a local channel
-(`file:///home/olantwin/Projects/SHiP/ship-conda-recipes-genie/output`);
-drop that entry once it is published.
-
 ## Running
 
 ```sh

@@ -4,14 +4,10 @@ platforms:
 environments:
   default:
     channels:
-    - url: file:///home/olantwin/Projects/SHiP/ship-conda-recipes-genie/output/
     - url: https://prefix.dev/ship/
     - url: https://conda.anaconda.org/conda-forge/
     packages:
       linux-64:
-      - conda: /home/olantwin/Projects/SHiP/ship-conda-recipes-genie/output/linux-64/genie-3.06.02-pythia6_253f86f_0.conda
-      - conda: /home/olantwin/Projects/SHiP/ship-conda-recipes-genie/output/linux-64/rootegpythia6-0.1-h0566472_9.conda
-      - conda: /home/olantwin/Projects/SHiP/ship-conda-recipes-genie/output/noarch/genie-data-3.06.02-h4616a5c_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/_openmp_mutex-4.5-7_kmp_llvm.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/argon2-cffi-bindings-25.1.0-py314h5bd0f2a_2.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/at-spi2-atk-2.38.0-h0630a04_3.tar.bz2
@@ -323,63 +319,14 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/webencodings-0.5.1-pyhd8ed1ab_3.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/websocket-client-1.9.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/zipp-4.1.0-pyhcf101f3_0.conda
+      - conda: https://prefix.dev/ship/linux-64/genie-3.06.02-pythia6_253f86f_0.conda
       - conda: https://prefix.dev/ship/linux-64/libjsonnet-0.22.0-hb0f4dca_1.conda
       - conda: https://prefix.dev/ship/linux-64/pythia6-6.4.28-hb0f4dca_6.conda
+      - conda: https://prefix.dev/ship/linux-64/rootegpythia6-0.1-h0566472_9.conda
       - conda: https://prefix.dev/ship/linux-64/shipdatamodel-0.1.0-h0566472_1.conda
+      - conda: https://prefix.dev/ship/noarch/genie-data-3.06.02-h4616a5c_0.conda
       - conda: https://prefix.dev/ship/noarch/random123-1.14.0-h4616a5c_1.conda
 packages:
-- conda: /home/olantwin/Projects/SHiP/ship-conda-recipes-genie/output/linux-64/genie-3.06.02-pythia6_253f86f_0.conda
-  subdir: linux-64
-  sha256: 3b90bc14fa7c109107358295a634c4bc5f59bbabd46c6fe7afff1f1a493ef6c0
-  md5: 27c4b3c62998d6a15fe9df16e125a4f7
-  depends:
-  - genie-data ==3.6.2
-  - libnsl
-  - libstdcxx >=15
-  - libgcc >=15
-  - __glibc >=2.17,<3.0.a0
-  - log4cpp >=1.1.4,<1.2.0a0
-  - pythia6 >=6.4.28,<6.5.0a0
-  - root_cxx_standard ==23
-  - root_base >=6.40.2,<6.40.3.0a0
-  - libxml2
-  - libxml2-16 >=2.15.3
-  - gsl >=2.7,<2.8.0a0
-  - lhapdf >=6.5.6,<6.6.0a0
-  - rootegpythia6 >=0.1,<0.2.0a0
-  channel: file:///home/olantwin/Projects/SHiP/ship-conda-recipes-genie/output
-  license: GPL-3.0-or-later
-  run_exports:
-    weak:
-    - genie >=3.6.2,<3.7.0a0
-  size: 4447684
-  timestamp: 1783357783798
-- conda: /home/olantwin/Projects/SHiP/ship-conda-recipes-genie/output/linux-64/rootegpythia6-0.1-h0566472_9.conda
-  subdir: linux-64
-  sha256: e4b5a854aff20b5040598e8dab4deafcbedef536f224eaf209e9cd371d01ae74
-  md5: bc03ddc6cda59b3fb98c6ea248f36d31
-  depends:
-  - __glibc >=2.17,<3.0.a0
-  - libstdcxx >=15
-  - libgcc >=15
-  - root_cxx_standard ==23
-  - root_base >=6.40.2,<6.40.3.0a0
-  - pythia6 >=6.4.28,<6.5.0a0
-  channel: file:///home/olantwin/Projects/SHiP/ship-conda-recipes-genie/output
-  license: GPL-3.0-or-later
-  run_exports:
-    weak:
-    - rootegpythia6 >=0.1,<0.2.0a0
-  size: 78785
-  timestamp: 1783357745601
-- conda: /home/olantwin/Projects/SHiP/ship-conda-recipes-genie/output/noarch/genie-data-3.06.02-h4616a5c_0.conda
-  subdir: noarch
-  sha256: 319a59e4fa2df9356b0fa4c2c8008f7d410c87e254449c4cf52f88b714fc3c1b
-  md5: 3182a75f77880f9704a1a243eabd37ce
-  channel: file:///home/olantwin/Projects/SHiP/ship-conda-recipes-genie/output
-  license: GPL-3.0-or-later
-  size: 118623427
-  timestamp: 1783350796781
 - conda: https://conda.anaconda.org/conda-forge/linux-64/_openmp_mutex-4.5-7_kmp_llvm.conda
   build_number: 7
   sha256: c0cddb66070dd6355311f7667ce2acccf70d1013edaa6e97f22859502fefdb22
@@ -4845,6 +4792,30 @@ packages:
   run_exports: {}
   size: 24190
   timestamp: 1779159948016
+- conda: https://prefix.dev/ship/linux-64/genie-3.06.02-pythia6_253f86f_0.conda
+  sha256: 8d80c1c900457b9140d575d3c3e30d89af963568f098c1df0ab64588b5860c5c
+  md5: 914ebcf0a324a2aeaffc080fb3bc9372
+  depends:
+  - genie-data ==3.6.2
+  - libnsl
+  - libstdcxx >=15
+  - libgcc >=15
+  - __glibc >=2.17,<3.0.a0
+  - log4cpp >=1.1.4,<1.2.0a0
+  - pythia6 >=6.4.28,<6.5.0a0
+  - root_base >=6.40.2,<6.40.3.0a0
+  - libxml2
+  - libxml2-16 >=2.15.3
+  - lhapdf >=6.5.6,<6.6.0a0
+  - gsl >=2.7,<2.8.0a0
+  - root_cxx_standard ==23
+  - rootegpythia6 >=0.1,<0.2.0a0
+  license: GPL-3.0-or-later
+  run_exports:
+    weak:
+    - genie >=3.6.2,<3.7.0a0
+  size: 4447483
+  timestamp: 1783372699558
 - conda: https://prefix.dev/ship/linux-64/libjsonnet-0.22.0-hb0f4dca_1.conda
   sha256: 1ee21a908866ba38a0585bbc199355b178f875aa354365387424965ee01d9dab
   md5: 91450f10621400e7176bc1fbd31c8d60
@@ -4870,6 +4841,22 @@ packages:
     - pythia6 >=6.4.28,<6.5.0a0
   size: 1072492
   timestamp: 1781446902861
+- conda: https://prefix.dev/ship/linux-64/rootegpythia6-0.1-h0566472_9.conda
+  sha256: 3892609590ecdcdd21b0985ebebcc58976a55da287f2477c41bd7a169190a0e0
+  md5: e6d0cda35efae18337ba6eac9499bd42
+  depends:
+  - libstdcxx >=15
+  - libgcc >=15
+  - __glibc >=2.17,<3.0.a0
+  - root_base >=6.40.2,<6.40.3.0a0
+  - pythia6 >=6.4.28,<6.5.0a0
+  - root_cxx_standard ==23
+  license: GPL-3.0-or-later
+  run_exports:
+    weak:
+    - rootegpythia6 >=0.1,<0.2.0a0
+  size: 78782
+  timestamp: 1783372699569
 - conda: https://prefix.dev/ship/linux-64/shipdatamodel-0.1.0-h0566472_1.conda
   sha256: 361589eca9a2ef87965d4707bfda168a0314bc56f878737e01f284a6ff60aa13
   md5: 98b423228cc31bb717056358b2fa06b3
@@ -4885,6 +4872,13 @@ packages:
     - shipdatamodel >=0.1.0,<0.2.0a0
   size: 51042
   timestamp: 1781881906395
+- conda: https://prefix.dev/ship/noarch/genie-data-3.06.02-h4616a5c_0.conda
+  sha256: 3420dad73db3c74d6a1ddda9fcdc6c3a1958ec97874818ba0d924fa4fdc0ec74
+  md5: 98a97c57f8ff1b2f6bd6fea7809e0598
+  license: GPL-3.0-or-later
+  run_exports: {}
+  size: 118623406
+  timestamp: 1783372699559
 - conda: https://prefix.dev/ship/noarch/random123-1.14.0-h4616a5c_1.conda
   sha256: ff55db42aa3b6f81456675f05d48546da04bea61e0e342188ab781c633586012
   md5: a43dc6c01f64145e2e9d8959c6d405f6

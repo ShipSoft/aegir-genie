@@ -5,13 +5,7 @@
 [workspace]
 name = "aegir-genie"
 description = "GENIE neutrino event generation plugin for the aegir simulation framework"
-channels = [
-  # Local channel with the not-yet-published genie package.
-  # TODO: drop once genie is published to prefix.dev/ship.
-  "file:///home/olantwin/Projects/SHiP/ship-conda-recipes-genie/output",
-  "https://prefix.dev/ship",
-  "conda-forge",
-]
+channels = ["https://prefix.dev/ship", "conda-forge"]
 platforms = ["linux-64"]
 requires-pixi = ">=0.68"
 
