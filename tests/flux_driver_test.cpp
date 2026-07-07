@@ -64,6 +64,11 @@ std::vector<Ray> const kRays{
 };
 constexpr double kPot = 6.5041e10;
 constexpr double kMaxEnergy = 35.001;
+double const kTotalWeight = [] {
+  double sum = 0.0;
+  for (auto const& ray : kRays) sum += ray.weight;
+  return sum;
+}();
 
 void write_flux_file(std::string const& path) {
   {
@@ -144,6 +149,8 @@ void test_metadata_and_conversions(std::string const& path) {
   check(driver.PdgCode() == ray.pdg, "pdg code");
   check_close(driver.Weight(), ray.weight, "weight");
   check(driver.Index() == 0, "index of first ray");
+  check_close(driver.GetTotalExposure(), kPot * ray.weight / kTotalWeight,
+              "exposure scales with the weight consumed, not the ray count");
   auto const& x4 = driver.Position();
   check_close(x4.X(), ray.vx * 1e-3, "vx mm -> m");
   check_close(x4.Y(), ray.vy * 1e-3, "vy mm -> m");
@@ -180,6 +187,9 @@ void test_exhaustion_and_clear(std::string const& path) {
   check(driver.GenerateNext(), "GenerateNext() works again after Clear()");
   check(driver.Index() == 0, "rewound to first entry");
   check(driver.NFluxNeutrinos() == 1, "exposure accumulates afresh");
+  check_close(driver.GetTotalExposure(),
+              kPot * kRays.front().weight / kTotalWeight,
+              "weight accounting restarts after Clear()");
 }
 
 void test_cycling(std::string const& path) {
