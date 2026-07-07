@@ -23,7 +23,11 @@ namespace aegir {
 struct GenieSourceConfig {
   std::string tune = "G18_02a_00_000";
   std::string spline_file;  // GENIE cross-section splines (gmkspl XML output)
-  std::string flux_file;    // SHiP neutrino flux ntuple (schema v1)
+  std::string flux_file;    // neutrino flux file (format per flux_format)
+  // 'ship': SHiP flux ntuple, schema v1 (ShipFluxDriver);
+  // 'gsimple': GENIE GSimple flux (genie::flux::GSimpleNtpFlux) — the format
+  // the SHiP neutrino group produces for gevgen_fnal.
+  std::string flux_format = "ship";
   std::string gdml_file;    // detector geometry for TGeoManager::Import
   std::string top_volume = "World";
   long seed = 20260706;  // base seed; each event derives its own via Philox
@@ -50,8 +54,19 @@ struct GenieSourceConfig {
         throw std::runtime_error(context + ": " + key + " '" + path +
                                  "' does not exist");
     };
+    if (flux_format != "ship" && flux_format != "gsimple")
+      throw std::runtime_error(context +
+                               ": flux_format must be 'ship' or 'gsimple', "
+                               "got '" +
+                               flux_format + "'");
     require_file("splines", spline_file);
-    require_file("flux_file", flux_file);
+    if (flux_file.empty())
+      throw std::runtime_error(context +
+                               ": config key 'flux_file' is required");
+    // Remote URLs (root://... via xrootd) cannot be checked on the local
+    // filesystem; leave those to the flux driver's own error handling.
+    if (flux_file.find("://") == std::string::npos)
+      require_file("flux_file", flux_file);
     require_file("gdml_file", gdml_file);
     if (!max_path_lengths_file.empty() && !fs::exists(max_path_lengths_file)) {
       // Will be created after the geometry scan — its directory must exist.

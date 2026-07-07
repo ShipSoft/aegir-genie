@@ -152,6 +152,20 @@ bool ShipFluxDriver::GenerateNext() {
   return true;
 }
 
+ShipFluxDriver::Ray ShipFluxDriver::peek_first_ray() {
+  auto& r = *reader_;  // RNTupleView::operator() is non-const
+  Ray ray;
+  ray.pdg = r.pdg(0);
+  double const px = r.px(0);
+  double const py = r.py(0);
+  double const pz = r.pz(0);
+  ray.momentum.SetPxPyPzE(px, py, pz,
+                          std::sqrt(px * px + py * py + pz * pz));
+  ray.position.SetXYZT(r.vx(0) * kMm2M, r.vy(0) * kMm2M, r.vz(0) * kMm2M,
+                       r.t(0) * kNs2S);
+  return ray;
+}
+
 void ShipFluxDriver::Clear(Option_t* /*opt*/) {
   // Reset the driver state: rewind to the start of the file and drop the
   // accumulated exposure. GMCJDriver / ROOTGeomAnalyzer call this with

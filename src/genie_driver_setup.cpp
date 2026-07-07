@@ -4,7 +4,10 @@
 
 #include "genie_driver_setup.hpp"
 
+#include <TChain.h>
+#include <TGeoBBox.h>
 #include <TGeoManager.h>
+#include <TGeoVolume.h>
 #include <TPythia6.h>
 #include <TRandom3.h>
 
@@ -22,6 +25,8 @@
 #include "Framework/Numerical/RandomGen.h"
 #include "Framework/Utils/AppInit.h"
 #include "Framework/Utils/RunOpt.h"
+#include "Tools/Flux/GFluxExposureI.h"
+#include "Tools/Flux/GSimpleNtpFlux.h"
 #include "Tools/Geometry/ROOTGeomAnalyzer.h"
 #include "philox_rng.hpp"
 #include "ship_flux_driver.hpp"
@@ -34,6 +39,46 @@ namespace {
 // aegir generators (see philox_rng.hpp).
 constexpr std::uint32_t kGenieStream = 0x47454E49;  // "GENI"
 
+// Startup sanity log: the first flux ray (SI meters, per the GFluxI
+// contract) next to the geometry bounding box (geometry units, cm for
+// ROOT/GDML), so coordinate-frame or unit mismatches between flux file and
+// geometry are visible immediately.
+void log_frame_check(GenieSourceConfig const& cfg, TGeoManager const& geo,
+                     genie::GFluxI& flux) {
+  double x = 0, y = 0, z = 0, e = 0;
+  int pdg = 0;
+  if (auto* ship = dynamic_cast<aegir::ShipFluxDriver*>(&flux)) {
+    auto const first = ship->peek_first_ray();
+    x = first.position.X();
+    y = first.position.Y();
+    z = first.position.Z();
+    e = first.momentum.E();
+    pdg = first.pdg;
+  } else if (auto* gs = dynamic_cast<genie::flux::GSimpleNtpFlux*>(&flux)) {
+    // Reading the chain fills the driver's current-entry buffer; harmless,
+    // because the driver re-reads whatever entry it needs on GenerateNext.
+    gs->GetFluxTChain()->GetEntry(0);
+    auto const* entry = gs->GetCurrentEntry();
+    x = entry->vtxx;
+    y = entry->vtxy;
+    z = entry->vtxz;
+    e = entry->E;
+    pdg = entry->pdg;
+  }
+  auto const* top = geo.GetTopVolume();
+  auto const* box = dynamic_cast<TGeoBBox const*>(top->GetShape());
+  double const dx = box ? box->GetDX() : -1;
+  double const dy = box ? box->GetDY() : -1;
+  double const dz = box ? box->GetDZ() : -1;
+  std::fprintf(
+      stderr,
+      "[genie-driver] frame check: first flux ray (%s) pdg=%d E=%g GeV at "
+      "(%g, %g, %g) m; geometry top volume '%s' half-lengths (%g, %g, %g) cm "
+      "= (%g, %g, %g) m\n",
+      cfg.flux_format.c_str(), pdg, e, x, y, z, top->GetName(), dx, dy, dz,
+      dx / 100., dy / 100., dz / 100.);
+}
+
 }  // namespace
 
 GenieDriverBundle::GenieDriverBundle() = default;
@@ -41,6 +86,10 @@ GenieDriverBundle::GenieDriverBundle(GenieDriverBundle&&) noexcept = default;
 GenieDriverBundle& GenieDriverBundle::operator=(GenieDriverBundle&&) noexcept =
     default;
 GenieDriverBundle::~GenieDriverBundle() = default;
+
+genie::flux::GFluxExposureI* GenieDriverBundle::exposure() const {
+  return dynamic_cast<genie::flux::GFluxExposureI*>(flux.get());
+}
 
 GenieDriverBundle make_genie_driver(GenieSourceConfig const& cfg,
                                     std::string const& context) {
@@ -78,10 +127,39 @@ GenieDriverBundle make_genie_driver(GenieSourceConfig const& cfg,
   bundle.geom->SetDensityUnits(genie::units::gram_centimeter3);
   bundle.geom->SetTopVolName(cfg.top_volume);
 
-  // 6. Flux: cycle so KeepOnThrowingFluxNeutrinos always finds a ray; the
-  //    delivered POT is still accounted through GFluxExposureI.
-  bundle.flux = std::make_unique<ShipFluxDriver>(cfg.flux_file,
-                                                 /*cycle=*/true);
+  // 6. Flux. Both drivers cycle through the file indefinitely so
+  //    KeepOnThrowingFluxNeutrinos always finds a ray; delivered POT is
+  //    accounted through GFluxExposureI either way.
+  if (cfg.flux_format == "gsimple") {
+    // GENIE's own GSimple flux driver — the format the SHiP neutrino group
+    // produces for gevgen_fnal. Entry positions are lab-frame meters (SI,
+    // matching the GFluxI contract), momenta GeV; we assume the SHiP global
+    // frame, i.e. the same frame as the GDML geometry.
+    //
+    // Weighted rays: by default the driver unweights internally
+    // (GenerateNext accept–rejects on wgt/maxWgt, drawing from
+    // RandomGen::RndFlux — covered by reseed_event — and then reports
+    // Weight() = 1), exactly as in gevgen_fnal, which never calls
+    // SetGenWeighted. Combined with GMCJDriver::ForceSingleProbScale the
+    // generated events are unweighted.
+    auto gsimple = std::make_unique<genie::flux::GSimpleNtpFlux>();
+    // The second argument is a config string for this driver (not a beam
+    // location): "no-offset-index" starts at entry 0 instead of a
+    // RandomGen-chosen random offset, keeping runs trivially reproducible
+    // and file consumption aligned between the plugin and gevgen_ship.
+    gsimple->LoadBeamSimData(cfg.flux_file, "no-offset-index");
+    if (gsimple->End())
+      throw std::runtime_error(context + ": GSimpleNtpFlux loaded no flux "
+                                         "entries from '" +
+                               cfg.flux_file + "'");
+    gsimple->SetNumOfCycles(0);  // 0 = recycle indefinitely (as gevgen_fnal)
+    bundle.flux = std::move(gsimple);
+  } else {
+    bundle.flux = std::make_unique<ShipFluxDriver>(cfg.flux_file,
+                                                   /*cycle=*/true);
+  }
+
+  log_frame_check(cfg, *geo, *bundle.flux);
 
   // Max-path-length scan strategy: scan with the actual flux, as gevgen_fnal
   // does by default. The alternative box scanner throws random-direction
@@ -157,14 +235,16 @@ void reseed_event(long base_seed, std::uint32_t event_number) {
 }
 
 void trace_event(std::uint32_t event_number, genie::EventRecord const& event,
-                 ShipFluxDriver& flux) {
+                 genie::GFluxI& flux) {
   if (!std::getenv("AEGIR_GENIE_RNG_TRACE")) return;
   auto const* vtx = event.Vertex();
+  auto const* exposure = dynamic_cast<genie::flux::GFluxExposureI*>(&flux);
   std::fprintf(stderr,
                "[rng-trace] event=%u flux_index=%ld rays_used=%ld "
                "vtx=(%.17g, %.17g, %.17g) n_entries=%d probe_pdg=%d\n",
-               event_number, flux.Index(), flux.NFluxNeutrinos(), vtx->X(),
-               vtx->Y(), vtx->Z(), event.GetEntries(),
+               event_number, flux.Index(),
+               exposure ? exposure->NFluxNeutrinos() : -1, vtx->X(), vtx->Y(),
+               vtx->Z(), event.GetEntries(),
                event.Particle(0) ? event.Particle(0)->Pdg() : 0);
 }
 

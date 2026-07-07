@@ -63,11 +63,12 @@ Configuration keys (see `workflows/genie_st.jsonnet` for a full example):
 |---|---|---|
 | `tune` | `G18_02a_00_000` | GENIE comprehensive model tune; must match the splines |
 | `splines` | *required* | cross-section spline XML (`gmkspl` output) |
-| `flux_file` | *required* | SHiP neutrino flux ntuple, schema v1 (see below) |
+| `flux_file` | *required* | neutrino flux file (format per `flux_format`; `root://` URLs work for gsimple) |
+| `flux_format` | `ship` | `ship` (schema-v1 ntuple, see below) or `gsimple` (GENIE GSimple flux, the gevgen_fnal input format) |
 | `gdml_file` | *required* | detector geometry, imported with `TGeoManager::Import` |
 | `top_volume` | `World` | TGeo top volume for the geometry analyzer |
 | `seed` | `20260706` | base seed; each event reseeds GENIE via Philox for reproducibility |
-| `max_path_lengths_file` | *(unset)* | optional XML cache for the expensive geometry scan: loaded if it exists, otherwise computed and saved |
+| `max_path_lengths_file` | *(unset)* | optional XML cache for the max-path-lengths flux scan: loaded if it exists, otherwise computed and saved. The scan uses the flux, so the cache depends on **geometry and flux** — regenerate it when either changes |
 
 GENIE is not thread-safe (unsynchronised singletons, global `gRandom` /
 `gGeoManager`), so the source runs serialised — same pattern as aegir's other
@@ -94,19 +95,57 @@ stderr in both the plugin and `gevgen_ship`; the traces diff line by line.
 
 ## Flux input
 
-The flux enters through `ShipFluxDriver`, a `genie::GFluxI` /
-`GFluxExposureI` implementation reading the SHiP neutrino flux ntuple
-(schema version 1, defined in aegir's `docs/neutrino_flux.md`): an RNTuple
-`nu_flux` with one entry per neutrino ray — PDG code, production vertex
-(mm, ns), momentum (GeV), statistical weight, parent information — plus a
-`flux_meta` RNTuple with the file's POT equivalent and maximum energy.
-Every ray keeps the exact energy–direction–position correlations from the
-upstream production, and the POT bookkeeping replaces FairShip's fixed-σ
-yield arithmetic (FairShip issue #984).
+Two flux formats are supported (config `flux_format` / CLI `--flux-format`):
 
-`scripts/make_flux_ntuple.py` writes a synthetic file for testing; real
-files are converted from FairShip productions with aegir's
-`scripts/convert_fairship_nu_flux.py`.
+**`ship`** — the SHiP neutrino flux ntuple (schema version 1, defined in
+aegir's `docs/neutrino_flux.md`), read by `ShipFluxDriver` (a
+`genie::GFluxI` / `GFluxExposureI` implementation): an RNTuple `nu_flux`
+with one entry per neutrino ray — PDG code, production vertex (mm, ns),
+momentum (GeV), statistical weight, parent information — plus a `flux_meta`
+RNTuple with the file's POT equivalent and maximum energy. Every ray keeps
+the exact energy–direction–position correlations from the upstream
+production, and the POT bookkeeping replaces FairShip's fixed-σ yield
+arithmetic (FairShip issue #984). `scripts/make_flux_ntuple.py` writes a
+synthetic file for testing; real files are converted from FairShip
+productions with aegir's `scripts/convert_fairship_nu_flux.py`.
+
+**`gsimple`** — GENIE's GSimple flux format, read by GENIE's own
+`genie::flux::GSimpleNtpFlux` driver. This is the format the SHiP neutrino
+group produces as `gevgen_fnal` input, so the group's existing files (e.g.
+on EOS, via `root://` URLs) work without conversion, and the embedded source
+can be cross-checked against the `gevgen_fnal` CLI pipeline on identical
+input. Facts worth knowing about the format and driver:
+
+- Entry positions are **lab-frame meters** (time in seconds) — already the
+  SI units `GFluxI::Position()` promises; we take the lab frame to be the
+  SHiP global frame, i.e. the frame of the GDML geometry. At startup the
+  driver assembly logs the first flux ray next to the geometry bounding box
+  (`[genie-driver] frame check: ...`), so a frame or unit mismatch is
+  visible immediately.
+- **Weighted rays are unweighted internally**: by default (`SetGenWeighted`
+  never called — same as `gevgen_fnal`) the driver accept–rejects entries on
+  `wgt/maxWgt`, drawing from GENIE's `RandomGen` (covered by the per-event
+  reseeding), and reports `Weight() = 1`. Combined with
+  `ForceSingleProbScale`, generated events are unweighted. POT accounting
+  comes from the driver's `GFluxExposureI` implementation (effective POT per
+  used entry = `protons/nEntries/maxWgt`).
+- The driver is configured with `"no-offset-index"` (start at entry 0
+  instead of a `RandomGen`-chosen random offset — `gevgen_fnal` uses the
+  random offset) and `SetNumOfCycles(0)` (recycle the file indefinitely,
+  like `gevgen_fnal`).
+- The current SHiP production file
+  (`Mbias2026noCharm_makeCascade_merged_nuflux_gsimple.root`, 49.9M rays,
+  1.7568e9 POT, all six flavours, max 270.2 GeV, weights 0.081–1.0) carries
+  an `aux` branch that is **empty** (no aux names declared in the meta, no
+  values) — parent/ancestry information is not available from it, unlike
+  schema-v1 ship files.
+- Reproducibility caveat: after a max-path-lengths flux scan the GSimple
+  driver's entry cursor cannot be rewound (unlike `ShipFluxDriver`), so a
+  run that computes the scan and a run that loads it from the cache consume
+  different flux entries. Runs are byte-reproducible when the cache state is
+  the same (both fresh or both cached); the physics is unaffected. With
+  `flux_format: ship`, runs are byte-identical regardless of the cache
+  state.
 
 ## Building
 

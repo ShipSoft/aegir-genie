@@ -24,7 +24,11 @@
 
 namespace genie {
 class EventRecord;
+class GFluxI;
 class GMCJDriver;
+namespace flux {
+class GFluxExposureI;
+}
 namespace geometry {
 class ROOTGeomAnalyzer;
 }
@@ -32,15 +36,20 @@ class ROOTGeomAnalyzer;
 
 namespace aegir {
 
-class ShipFluxDriver;
-
 // The assembled MC-job machinery. GMCJDriver only borrows the flux driver
 // and geometry analyzer, so the bundle owns all three; keep it alive for as
-// long as events are generated.
+// long as events are generated. The flux driver is either an
+// aegir::ShipFluxDriver (flux_format 'ship') or a
+// genie::flux::GSimpleNtpFlux ('gsimple'); consumers should use the GFluxI /
+// GFluxExposureI interfaces where possible.
 struct GenieDriverBundle {
   std::unique_ptr<genie::geometry::ROOTGeomAnalyzer> geom;
-  std::unique_ptr<ShipFluxDriver> flux;
+  std::unique_ptr<genie::GFluxI> flux;
   std::unique_ptr<genie::GMCJDriver> driver;
+
+  // Exposure/POT accounting view of the flux driver (both implementations
+  // provide it); nullptr only if a future driver does not.
+  genie::flux::GFluxExposureI* exposure() const;
 
   // Out of line: the members' types are incomplete here.
   GenieDriverBundle();
@@ -51,10 +60,12 @@ struct GenieDriverBundle {
 
 // Validates the config and assembles a fully Configure()d GMCJDriver:
 // tune -> Messenger -> RandGen -> splines -> GDML/ROOTGeomAnalyzer -> cycling
-// ShipFluxDriver -> GMCJDriver (UseSplines, ForceSingleProbScale,
+// flux driver -> GMCJDriver (UseSplines, ForceSingleProbScale,
 // KeepOnThrowingFluxNeutrinos), with optional XML caching of the expensive
-// max-path-lengths geometry scan. `context` prefixes error messages (e.g.
-// "genie_source", "gevgen_ship").
+// max-path-lengths geometry scan. Logs the first flux ray and the geometry
+// bounding box at startup so coordinate-frame mismatches are visible
+// immediately. `context` prefixes error messages (e.g. "genie_source",
+// "gevgen_ship").
 //
 // GENIE is a web of unsynchronized singletons: call this once per process.
 GenieDriverBundle make_genie_driver(GenieSourceConfig const& cfg,
@@ -73,6 +84,6 @@ void reseed_event(long base_seed, std::uint32_t event_number);
 // reseed_event and trace_event print per-event RNG/flux/vertex state to
 // stderr, so the plugin and app paths can be diffed line by line.
 void trace_event(std::uint32_t event_number, genie::EventRecord const& event,
-                 ShipFluxDriver& flux);
+                 genie::GFluxI& flux);
 
 }  // namespace aegir

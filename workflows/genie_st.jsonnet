@@ -33,11 +33,16 @@
       tune: 'G18_02a_00_000',
       splines: 'gxspl-ship.xml',
       flux_file: 'nu_flux.root',
+      // 'ship' (schema-v1 ntuple) or 'gsimple' (GENIE GSimple flux, the
+      // gevgen_fnal input format the neutrino group produces; root:// URLs
+      // work). See README.md § Flux input.
+      flux_format: 'ship',
       gdml_file: 'ship.gdml',
       top_volume: 'World',
       seed: 20260706,
-      // Cache for the expensive max-path-lengths geometry scan: computed and
-      // saved on the first run, loaded on subsequent runs.
+      // Cache for the max-path-lengths flux scan: computed and saved on the
+      // first run, loaded on subsequent runs. Depends on geometry AND flux —
+      // regenerate when either changes.
       max_path_lengths_file: 'maxpl-ship.xml',
     },
     // aegir plugins from here on.

@@ -2,19 +2,20 @@
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-// flux_driver_test.cpp — standalone check of ShipFluxDriver and the
+// flux_driver_test.cpp — standalone check of the flux drivers and the
 // genie_source config validation
 //
-// Writes a synthetic schema-v1 neutrino flux file with known values, then
-// drives ShipFluxDriver::GenerateNext() through it and checks the unit
-// conversions, exhaustion/cycling behaviour and exposure accounting.
-// Deliberately does not involve GMCJDriver, so it runs without cross-section
-// splines (which do not exist yet as a package); everything here works today.
+// Writes synthetic flux files with known values — a schema-v1 SHiP ntuple
+// and a GENIE GSimple file — then drives ShipFluxDriver / GSimpleNtpFlux
+// through them and checks unit conversions, exhaustion/cycling behaviour
+// and exposure accounting. Deliberately does not involve GMCJDriver, so it
+// runs without cross-section splines.
 
 #include <ROOT/RNTupleModel.hxx>
 #include <ROOT/RNTupleWriter.hxx>
 #include <TFile.h>
 #include <TSystem.h>
+#include <TTree.h>
 
 #include <cmath>
 #include <cstdint>
@@ -25,6 +26,7 @@
 #include <string>
 #include <vector>
 
+#include "Tools/Flux/GSimpleNtpFlux.h"
 #include "genie_config.hpp"
 #include "ship_flux_driver.hpp"
 
@@ -225,6 +227,90 @@ void test_bad_files() {
   }
 }
 
+// --- GSimple flux (GENIE's own driver; used for flux_format 'gsimple') ----
+
+// GSimple entries are lab-frame meters/seconds (already SI) with explicit E;
+// mirror kRays so both drivers can be checked against the same expectations.
+void write_gsimple_file(std::string const& path) {
+  std::unique_ptr<TFile> file{TFile::Open(path.c_str(), "RECREATE")};
+  auto* fluxtree = new TTree("flux", "GSimple flux");
+  auto* entry = new genie::flux::GSimpleNtpEntry;
+  fluxtree->Branch("entry", &entry);
+  for (auto const& ray : kRays) {
+    entry->Reset();
+    entry->pdg = ray.pdg;
+    entry->wgt = 1.0;  // min=max=1 -> driver takes the already-unweighted path
+    entry->vtxx = ray.vx * 1e-3;  // store as meters
+    entry->vtxy = ray.vy * 1e-3;
+    entry->vtxz = ray.vz * 1e-3;
+    entry->vtxt = ray.t * 1e-9;  // seconds
+    entry->px = ray.px;
+    entry->py = ray.py;
+    entry->pz = ray.pz;
+    entry->E =
+        std::sqrt(ray.px * ray.px + ray.py * ray.py + ray.pz * ray.pz);
+    entry->metakey = 42;
+    fluxtree->Fill();
+  }
+  auto* metatree = new TTree("meta", "GSimple flux meta");
+  auto* meta = new genie::flux::GSimpleNtpMeta;
+  metatree->Branch("meta", &meta);
+  meta->Reset();
+  meta->maxEnergy = kMaxEnergy;
+  meta->minWgt = 1.0;
+  meta->maxWgt = 1.0;
+  meta->protons = kPot;
+  meta->pdglist = {12, 14, -14};
+  meta->metakey = 42;
+  metatree->Fill();
+  file->Write();
+  file->Close();
+}
+
+void test_gsimple_driver(std::string const& path) {
+  std::cout << "GSimpleNtpFlux (flux_format 'gsimple'):\n";
+  // The driver registers flavours in a PDGCodeList, which validates against
+  // PDGLibrary and therefore needs the $GENIE data directory.
+  if (!gSystem->Getenv("GENIE")) {
+    std::cout << "  SKIP: $GENIE not set — run under `pixi run test`\n";
+    return;
+  }
+  write_gsimple_file(path);
+
+  genie::flux::GSimpleNtpFlux driver;
+  // "no-offset-index": start at entry 0 instead of a random offset — the
+  // same configuration genie_driver_setup uses.
+  driver.LoadBeamSimData(path, "no-offset-index");
+  // Quirk: GSimpleNtpFlux's cycle counter starts at 0 and wraps while
+  // fICycle < fNCycles, so SetNumOfCycles(N) delivers N+1 passes; N=1 means
+  // two passes before End(). Only 0 (= cycle forever, what
+  // genie_driver_setup uses) has unsurprising semantics.
+  driver.SetNumOfCycles(1);
+
+  check_close(driver.MaxEnergy(), kMaxEnergy, "MaxEnergy from meta tree");
+  check(driver.FluxParticles().size() == 3, "flavour list from meta tree");
+
+  check(driver.GenerateNext(), "GenerateNext() first ray");
+  auto const& ray = kRays.front();
+  check(driver.PdgCode() == ray.pdg, "pdg code");
+  check_close(driver.Weight(), 1.0, "unit-weight file stays unweighted");
+  auto const& x4 = driver.Position();
+  check_close(x4.X(), ray.vx * 1e-3, "vtxx passthrough (already meters)");
+  check_close(x4.Z(), ray.vz * 1e-3, "vtxz passthrough (already meters)");
+  auto const& p4 = driver.Momentum();
+  check_close(p4.Pz(), ray.pz, "pz passthrough (GeV)");
+
+  int generated = 1;
+  while (driver.GenerateNext()) ++generated;
+  check(generated == static_cast<int>(2 * kRays.size()),
+        "SetNumOfCycles(1) delivers two passes (GENIE off-by-one quirk)");
+  check(driver.End(), "End() true after the cycles are used up");
+  check(driver.NFluxNeutrinos() == static_cast<long>(2 * kRays.size()),
+        "ray count via GFluxExposureI");
+  check_close(driver.GetTotalExposure(), 2.0 * kPot,
+              "two passes deliver twice the file's POT (UsedPOTs)", 1e-9);
+}
+
 void test_config_validation(std::string const& flux_path) {
   std::cout << "genie_source config validation:\n";
 
@@ -269,6 +355,16 @@ void test_config_validation(std::string const& flux_path) {
   bad = cfg;
   bad.max_path_lengths_file = "/nonexistent/dir/maxpl.xml";
   expect_throw(bad, "directory", "uncreatable max-path-lengths cache rejected");
+
+  bad = cfg;
+  bad.flux_format = "dk2nu";
+  expect_throw(bad, "flux_format", "unknown flux_format rejected");
+
+  bad = cfg;
+  bad.flux_format = "gsimple";
+  bad.flux_file = "root://eospublic.cern.ch//eos/some/remote/flux.root";
+  bad.validate();  // remote URLs skip the local-existence check
+  check(true, "remote flux URL accepted (existence left to the driver)");
 }
 
 }  // namespace
@@ -287,7 +383,11 @@ int main(int argc, char** argv) {
   test_bad_files();
   test_config_validation(path);
 
+  std::string const gsimple_path = path + ".gsimple.root";
+  test_gsimple_driver(gsimple_path);
+
   std::remove(path.c_str());
+  std::remove(gsimple_path.c_str());
 
   if (failures) {
     std::cout << "\n" << failures << " check(s) FAILED\n";

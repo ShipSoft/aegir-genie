@@ -27,6 +27,8 @@
 #include "Framework/EventGen/GMCJDriver.h"
 #include "Framework/Ntuple/NtpMCFormat.h"
 #include "Framework/Ntuple/NtpWriter.h"
+#include "Framework/ParticleData/PDGCodeList.h"
+#include "Tools/Flux/GFluxExposureI.h"
 #include "genie_config.hpp"
 #include "genie_driver_setup.hpp"
 #include "ship_flux_driver.hpp"
@@ -47,12 +49,16 @@ Usage:
   gevgen_ship -f FLUX -g GDML -x SPLINES -n EVENTS [options]
 
 Required:
-  -f, --flux FILE           SHiP neutrino flux ntuple, schema v1
+  -f, --flux FILE           neutrino flux file (see --flux-format)
   -g, --geometry FILE       detector GDML (imported with TGeoManager::Import)
   -x, --splines FILE        cross-section splines (gmkspl XML output)
   -n, --events N            number of events to generate
 
 Options:
+      --flux-format FMT     'ship' (SHiP flux ntuple, schema v1) or
+                            'gsimple' (GENIE GSimple flux, the gevgen_fnal
+                            input format; root:// URLs supported)
+                            [default: ship]
   -o, --output NAME         output GHEP file. NAME ending in .root is used
                             verbatim; anything else is a filename prefix
                             (NAME.RUN.ghep.root)   [default: gevgen_ship]
@@ -100,6 +106,8 @@ CliOptions parse_args(int argc, char** argv) {
       std::exit(0);
     } else if (a == "-f" || a == "--flux") {
       opt.cfg.flux_file = value(i, a);
+    } else if (a == "--flux-format") {
+      opt.cfg.flux_format = value(i, a);
     } else if (a == "-g" || a == "--geometry") {
       opt.cfg.gdml_file = value(i, a);
     } else if (a == "-x" || a == "--splines") {
@@ -133,6 +141,23 @@ CliOptions parse_args(int argc, char** argv) {
   return opt;
 }
 
+// Flux description for logs: rays/POT of the whole file where the driver
+// exposes them (ship schema v1); flavour list and max energy come from the
+// generic GFluxI interface.
+std::string describe_flux(aegir::GenieDriverBundle const& bundle) {
+  std::ostringstream out;
+  if (auto const* ship =
+          dynamic_cast<aegir::ShipFluxDriver*>(bundle.flux.get())) {
+    out << ship->entries() << " rays, " << ship->pot() << " POT, ";
+  }
+  out << "max energy " << bundle.flux->MaxEnergy() << " GeV, flavours [";
+  auto const& pdgs = bundle.flux->FluxParticles();
+  for (std::size_t i = 0; i < pdgs.size(); ++i)
+    out << (i ? ", " : "") << pdgs[i];
+  out << "]";
+  return out.str();
+}
+
 int run(CliOptions const& opt) {
   // Same assembly as the plugin: config validation (clear errors for missing
   // files), tune, splines, geometry, flux, Configure().
@@ -140,11 +165,10 @@ int run(CliOptions const& opt) {
 
   if (opt.dry_run) {
     std::cout << "gevgen_ship: dry run OK — tune '" << opt.cfg.tune
-              << "', splines '" << opt.cfg.spline_file << "', "
-              << bundle.flux->entries() << " flux rays ("
-              << bundle.flux->pot() << " POT, max energy "
-              << bundle.flux->MaxEnergy() << " GeV), GlobProbScale = "
-              << bundle.driver->GlobProbScale() << '\n';
+              << "', splines '" << opt.cfg.spline_file << "', flux ("
+              << opt.cfg.flux_format << ") " << describe_flux(bundle)
+              << ", GlobProbScale = " << bundle.driver->GlobProbScale()
+              << '\n';
     return 0;
   }
 
@@ -164,15 +188,16 @@ int run(CliOptions const& opt) {
 
     std::unique_ptr<genie::EventRecord> event{bundle.driver->GenerateEvent()};
     if (!event) {
-      // The flux driver cycles, so exhaustion "cannot happen" — but if GENIE
+      // The flux drivers cycle, so exhaustion "cannot happen" — but if GENIE
       // still comes back empty-handed, say what the flux looked like.
+      auto const* exposure = bundle.exposure();
       std::cerr << "gevgen_ship: GMCJDriver::GenerateEvent returned no event "
                    "at event "
-                << i << " — flux file '" << opt.cfg.flux_file << "' holds "
-                << bundle.flux->entries() << " rays (cycled; "
-                << bundle.flux->NFluxNeutrinos()
-                << " thrown so far). Check the flux/geometry overlap and the "
-                   "spline coverage.\n";
+                << i << " — flux file '" << opt.cfg.flux_file << "' ("
+                << describe_flux(bundle) << "; cycled, "
+                << (exposure ? exposure->NFluxNeutrinos() : -1)
+                << " rays thrown so far). Check the flux/geometry overlap "
+                   "and the spline coverage.\n";
       return 1;
     }
     aegir::trace_event(static_cast<std::uint32_t>(i), *event, *bundle.flux);
@@ -187,16 +212,18 @@ int run(CliOptions const& opt) {
 
   // Normalisation summary: with ForceSingleProbScale the sample is
   // unweighted and NFluxNeutrinos * GlobProbScale relates events to flux
-  // rays; the POT equivalent scales the flux file's POT by the fraction of
-  // rays consumed (across cycles) — see ShipFluxDriver::GetTotalExposure.
+  // rays; the POT equivalent comes from the driver's GFluxExposureI
+  // implementation (ship: POT x fraction of the file consumed; gsimple:
+  // accumulated effective POT per unweighted ray, as in gevgen_fnal).
+  auto const* exposure = bundle.exposure();
   std::cout << "gevgen_ship: done — " << opt.n_events << " events\n"
-            << "  flux rays used:      " << bundle.flux->NFluxNeutrinos()
-            << " (file: " << bundle.flux->entries() << " rays, "
-            << bundle.flux->pot() << " POT)\n"
+            << "  flux rays used:      "
+            << (exposure ? exposure->NFluxNeutrinos() : -1) << " (file: "
+            << describe_flux(bundle) << ")\n"
             << "  global prob. scale:  " << bundle.driver->GlobProbScale()
             << '\n'
-            << "  POT equivalent:      " << bundle.flux->GetTotalExposure()
-            << '\n';
+            << "  POT equivalent:      "
+            << (exposure ? exposure->GetTotalExposure() : 0.0) << '\n';
   return 0;
 }
 

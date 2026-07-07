@@ -65,6 +65,16 @@ class ShipFluxDriver : public genie::GFluxI,
   double pot() const { return pot_; }
   std::uint64_t entries() const { return n_entries_; }
 
+  // First ray of the file (SI units, like Position()/Momentum()), read
+  // without disturbing the sequential driver state — for startup
+  // frame-sanity logging.
+  struct Ray {
+    int pdg;
+    TLorentzVector position;  // m, s
+    TLorentzVector momentum;  // GeV
+  };
+  Ray peek_first_ray();
+
  private:
   struct Reader;  // hides ROOT RNTuple types from this header
   std::unique_ptr<Reader> reader_;
