@@ -222,7 +222,7 @@ void test_bad_files() {
     aegir::ShipFluxDriver driver{"/nonexistent/flux.root"};
     check(false, "missing file throws");
   } catch (std::runtime_error const& e) {
-    check(std::string{e.what()}.find("flux_meta") != std::string::npos,
+    check(std::string{e.what()}.contains("flux_meta"),
           "missing file throws with a helpful message");
   }
 }
@@ -319,7 +319,7 @@ void test_config_validation(std::string const& flux_path) {
       cfg.validate();
       check(false, what);
     } catch (std::runtime_error const& e) {
-      check(std::string{e.what()}.find(needle) != std::string::npos,
+      check(std::string{e.what()}.contains(needle),
             what + " (got: " + e.what() + ")");
     }
   };

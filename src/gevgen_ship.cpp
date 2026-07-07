@@ -15,12 +15,14 @@
 // genie_reader_source — the apples-to-apples validation path between the
 // embedded source and the file-reader chain.
 
+#include <charconv>
 #include <cstdint>
 #include <exception>
 #include <iostream>
 #include <memory>
 #include <sstream>
 #include <string>
+#include <system_error>
 #include <vector>
 
 #include "Framework/EventGen/EventRecord.h"
@@ -96,8 +98,9 @@ CliOptions parse_args(int argc, char** argv) {
     return args[++i];
   };
   auto long_value = [](std::string const& s, long& out) {
-    std::istringstream in{s};
-    return static_cast<bool>(in >> out) && in.eof();
+    auto const* end = s.data() + s.size();
+    auto const res = std::from_chars(s.data(), end, out);
+    return res.ec == std::errc() && res.ptr == end;
   };
 
   for (std::size_t i = 0; i < args.size(); ++i) {

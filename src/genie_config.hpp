@@ -65,8 +65,7 @@ struct GenieSourceConfig {
                                ": config key 'flux_file' is required");
     // Remote URLs (root://... via xrootd) cannot be checked on the local
     // filesystem; leave those to the flux driver's own error handling.
-    if (flux_file.find("://") == std::string::npos)
-      require_file("flux_file", flux_file);
+    if (!flux_file.contains("://")) require_file("flux_file", flux_file);
     require_file("gdml_file", gdml_file);
     if (!max_path_lengths_file.empty() && !fs::exists(max_path_lengths_file)) {
       // Will be created after the geometry scan — its directory must exist.

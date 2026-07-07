@@ -23,6 +23,7 @@
 // aegir::reseed_event).
 
 #include <SHiP/MCParticle.hpp>
+#include <array>
 #include <cstdint>
 #include <map>
 #include <memory>

@@ -26,6 +26,10 @@ constexpr double kNs2S = 1e-9;
 
 // Bundles the RNTuple reader with the typed field views (views are not
 // default-constructible, hence the factory-style construction below).
+// `flux` must stay the FIRST member: the views hold columns backed by the
+// reader's page source and must be destroyed before it (members destroy in
+// reverse declaration order) — hence also the two-phase construction below
+// (views created first, reader moved in afterwards).
 struct ShipFluxDriver::Reader {
   std::unique_ptr<ROOT::RNTupleReader> flux;
   ROOT::RNTupleView<std::int32_t> pdg;
