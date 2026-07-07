@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: 2026 CERN for the benefit of the SHiP Collaboration
 #
-# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-License-Identifier: LGPL-3.0-or-later
 
 """Write a synthetic SHiP neutrino flux file (schema v1).
 
@@ -25,8 +25,19 @@ random.seed(7)
 
 model = ROOT.RNTupleModel.Create()
 model.MakeField["std::int32_t"]("pdg")
-for name in ("vx", "vy", "vz", "t", "px", "py", "pz", "weight",
-             "parent_px", "parent_py", "parent_pz"):
+for name in (
+    "vx",
+    "vy",
+    "vz",
+    "t",
+    "px",
+    "py",
+    "pz",
+    "weight",
+    "parent_px",
+    "parent_py",
+    "parent_pz",
+):
     model.MakeField["double"](name)
 model.MakeField["std::int32_t"]("parent_pdg")
 model.MakeField["std::int32_t"]("process_id")

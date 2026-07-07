@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: 2026 CERN for the benefit of the SHiP Collaboration
 //
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: LGPL-3.0-or-later
 
 // flux_driver_test.cpp — standalone check of the flux drivers and the
 // genie_source config validation
@@ -11,12 +11,12 @@
 // and exposure accounting. Deliberately does not involve GMCJDriver, so it
 // runs without cross-section splines.
 
-#include <ROOT/RNTupleModel.hxx>
-#include <ROOT/RNTupleWriter.hxx>
 #include <TFile.h>
 #include <TSystem.h>
 #include <TTree.h>
 
+#include <ROOT/RNTupleModel.hxx>
+#include <ROOT/RNTupleWriter.hxx>
 #include <cmath>
 #include <cstdint>
 #include <cstdio>
@@ -247,8 +247,7 @@ void write_gsimple_file(std::string const& path) {
     entry->px = ray.px;
     entry->py = ray.py;
     entry->pz = ray.pz;
-    entry->E =
-        std::sqrt(ray.px * ray.px + ray.py * ray.py + ray.pz * ray.pz);
+    entry->E = std::sqrt(ray.px * ray.px + ray.py * ray.py + ray.pz * ray.pz);
     entry->metakey = 42;
     fluxtree->Fill();
   }

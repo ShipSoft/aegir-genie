@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: 2026 CERN for the benefit of the SHiP Collaboration
 //
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: LGPL-3.0-or-later
 
 // genie_config.hpp — configuration for the GENIE driver assembly
 //
@@ -28,7 +28,7 @@ struct GenieSourceConfig {
   // 'gsimple': GENIE GSimple flux (genie::flux::GSimpleNtpFlux) — the format
   // the SHiP neutrino group produces for gevgen_fnal.
   std::string flux_format = "ship";
-  std::string gdml_file;    // detector geometry for TGeoManager::Import
+  std::string gdml_file;  // detector geometry for TGeoManager::Import
   std::string top_volume = "World";
   long seed = 20260706;  // base seed; each event derives its own via Philox
   // Optional cache for the (expensive) max-path-lengths geometry scan: if the
