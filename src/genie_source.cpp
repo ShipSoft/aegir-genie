@@ -58,30 +58,40 @@ class GenieSource : public phlex::source {
   // numbering (generate_layers' default starting_number).
   std::vector<SHiP::MCParticle> generate(phlex::data_cell_index const& id) {
     auto const requested = id.number();
-    if (auto it = ready_.find(requested); it != ready_.end()) {
-      auto out = std::move(it->second);
-      ready_.erase(it);
-      return out;
+    if (requested >= next_in_order_) {
+      if (requested - next_in_order_ > kMaxLookahead)
+        throw std::runtime_error(
+            "genie_source: event " + std::to_string(requested) +
+            " requested while event " + std::to_string(next_in_order_) +
+            " is next in order — event numbering does not look 0-based and "
+            "contiguous (generate_layers starting_number 0)");
+      while (next_in_order_ <= requested) {
+        ready_.emplace(next_in_order_, generate_in_order(next_in_order_));
+        ++next_in_order_;
+      }
     }
-    if (requested < next_in_order_)
+    auto const it = ready_.find(requested);
+    if (it == ready_.end())
       throw std::runtime_error("genie_source: event " +
                                std::to_string(requested) +
                                " requested twice — cannot regenerate without "
                                "disturbing the flux sequence");
-    if (requested - next_in_order_ > kMaxLookahead)
-      throw std::runtime_error(
-          "genie_source: event " + std::to_string(requested) +
-          " requested while event " + std::to_string(next_in_order_) +
-          " is next in order — event numbering does not look 0-based and "
-          "contiguous (generate_layers starting_number 0)");
-    while (next_in_order_ < requested) {
-      ready_.emplace(next_in_order_, generate_in_order(next_in_order_));
-      ++next_in_order_;
-    }
-    ++next_in_order_;
-    return generate_in_order(requested);
+    auto out = std::move(it->second);
+    ready_.erase(it);
+    return out;
   }
 
+  phlex::detail::provider_bundles create_providers(
+      phlex::product_selector const& selector) override {
+    return aegir::mc_particle_provider_bundles(
+        selector,
+        [this](phlex::data_cell_index const& id) { return generate(id); },
+        phlex::concurrency::serial);
+  }
+
+  phlex::index_generator indices() override { co_return; }
+
+ private:
   std::vector<SHiP::MCParticle> generate_in_order(std::size_t event_number) {
     aegir::reseed_event(cfg_.seed, static_cast<std::uint32_t>(event_number));
 
@@ -138,17 +148,6 @@ class GenieSource : public phlex::source {
     return particles;
   }
 
-  phlex::detail::provider_bundles create_providers(
-      phlex::product_selector const& selector) override {
-    return aegir::mc_particle_provider_bundles(
-        selector,
-        [this](phlex::data_cell_index const& id) { return generate(id); },
-        phlex::concurrency::serial);
-  }
-
-  phlex::index_generator indices() override { co_return; }
-
- private:
   aegir::GenieSourceConfig cfg_;
   aegir::GenieDriverBundle bundle_;  // initialized after cfg_ (declared last)
 
