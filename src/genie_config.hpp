@@ -40,6 +40,8 @@ struct GenieSourceConfig {
     namespace fs = std::filesystem;
     if (tune.empty())
       throw std::runtime_error(context + ": 'tune' must not be empty");
+    if (top_volume.empty())
+      throw std::runtime_error(context + ": 'top_volume' must not be empty");
     if (seed <= 0)
       throw std::runtime_error(
           context +

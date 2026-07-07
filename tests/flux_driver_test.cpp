@@ -362,6 +362,10 @@ void test_config_validation(std::string const& flux_path) {
   expect_throw(bad, "seed", "non-positive seed rejected");
 
   bad = cfg;
+  bad.top_volume.clear();
+  expect_throw(bad, "top_volume", "empty top_volume rejected");
+
+  bad = cfg;
   bad.max_path_lengths_file = "/nonexistent/dir/maxpl.xml";
   expect_throw(bad, "directory", "uncreatable max-path-lengths cache rejected");
 
