@@ -47,6 +47,14 @@ struct GenieSourceConfig {
           context +
           ": 'seed' must be > 0 (GENIE ignores non-positive seeds), got " +
           std::to_string(seed));
+    // The per-event Philox key uses the seed as a 32-bit word (see
+    // reseed_event); wider seeds would silently alias mod 2^32 while GENIE's
+    // own RandGen and the GHEP metadata got the full value. (Event numbers
+    // are likewise taken mod 2^32 — unreachable in practice.)
+    if (seed > 4294967295L)
+      throw std::runtime_error(
+          context + ": 'seed' must fit in 32 bits (max 4294967295), got " +
+          std::to_string(seed));
     auto require_file = [&context](std::string const& key,
                                    std::string const& path) {
       if (path.empty())

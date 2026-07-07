@@ -4,8 +4,9 @@
 
 // philox_rng.hpp — counter-based RNG shared by the event-generator sources
 //
-// Vendored unchanged from aegir (src/philox_rng.hpp) pending a shared helper
-// package; keep in sync with the original. LGPL-3.0-or-later, see README.md
+// Vendored from aegir (src/philox_rng.hpp) pending a shared helper package;
+// keep in sync with the original (the backward-compatible `ctr1` sub-stream
+// parameter below is pending upstreaming). LGPL-3.0-or-later, see README.md
 // § Licensing.
 //
 // Random123 Philox 4x32 is deterministic per seed with no shared state, so
@@ -30,9 +31,14 @@ namespace aegir {
 class PhiloxRng {
  public:
   // key_hi selects an independent stream, so different generators seeded with
-  // the same event number draw uncorrelated sequences.
-  explicit PhiloxRng(std::uint32_t seed, std::uint32_t key_hi = 0xBEEFCAFE)
-      : key_{{seed, key_hi}}, ctr_{{0, 0, 0, 0}} {}
+  // the same event number draw uncorrelated sequences. ctr1 initializes the
+  // second counter word, giving each (seed, key_hi, ctr1) triple a disjoint
+  // counter range — use it for per-event sub-streams of one seed without
+  // perturbing the key (a key derived as seed ^ event would collide across
+  // seeds: XOR is not injective in (seed, event)).
+  explicit PhiloxRng(std::uint32_t seed, std::uint32_t key_hi = 0xBEEFCAFE,
+                     std::uint32_t ctr1 = 0)
+      : key_{{seed, key_hi}}, ctr_{{0, ctr1, 0, 0}} {}
 
   double uniform() {
     if (idx_ >= 4) {

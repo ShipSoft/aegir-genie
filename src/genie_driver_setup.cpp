@@ -208,8 +208,16 @@ GenieDriverBundle make_genie_driver(GenieSourceConfig const& cfg,
 }
 
 void reseed_event(long base_seed, std::uint32_t event_number) {
-  PhiloxRng rng{static_cast<std::uint32_t>(base_seed) ^ event_number,
-                kGenieStream};
+  // The event number selects a Philox counter sub-stream; the key stays
+  // (base seed, stream), so distinct (seed, event) pairs draw from disjoint
+  // counter ranges. (An earlier version XORed the event into the key word,
+  // which collides across base seeds — seed ^ event is not injective, so
+  // productions with consecutive seeds shared per-event RNG streams.) The
+  // derived TRandom3 seed is still one 32-bit value, so accidental birthday
+  // collisions (~N²/2³³ over N events) remain; only the systematic pairing
+  // is gone. cfg.validate() guarantees base_seed fits in 32 bits.
+  PhiloxRng rng{static_cast<std::uint32_t>(base_seed), kGenieStream,
+                event_number};
   // TRandom3 seeds are UInt_t; keep the full 32-bit range but avoid 0
   // (which TRandom3 interprets as "seed from clock").
   auto const seed = 1 + static_cast<long>(rng.uniform() * 4294967294.0);
