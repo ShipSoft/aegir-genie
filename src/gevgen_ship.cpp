@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: 2026 CERN for the benefit of the SHiP Collaboration
 //
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: LGPL-3.0-or-later
 
 // gevgen_ship.cpp — standalone SHiP neutrino event generator
 //
@@ -43,7 +43,8 @@ struct CliOptions {
   bool dry_run = false;
 };
 
-constexpr char kUsage[] = R"(gevgen_ship — SHiP neutrino event generator (GENIE, GHEP output)
+constexpr char kUsage[] =
+    R"(gevgen_ship — SHiP neutrino event generator (GENIE, GHEP output)
 
 Usage:
   gevgen_ship -f FLUX -g GDML -x SPLINES -n EVENTS [options]
@@ -167,8 +168,7 @@ int run(CliOptions const& opt) {
     std::cout << "gevgen_ship: dry run OK — tune '" << opt.cfg.tune
               << "', splines '" << opt.cfg.spline_file << "', flux ("
               << opt.cfg.flux_format << ") " << describe_flux(bundle)
-              << ", GlobProbScale = " << bundle.driver->GlobProbScale()
-              << '\n';
+              << ", GlobProbScale = " << bundle.driver->GlobProbScale() << '\n';
     return 0;
   }
 
@@ -204,8 +204,8 @@ int run(CliOptions const& opt) {
     writer.AddEventRecord(static_cast<int>(i), event.get());
 
     if ((i + 1) % 100 == 0 || i + 1 == opt.n_events)
-      std::cout << "gevgen_ship: generated " << (i + 1) << " / "
-                << opt.n_events << " events\n";
+      std::cout << "gevgen_ship: generated " << (i + 1) << " / " << opt.n_events
+                << " events\n";
   }
 
   writer.Save();
@@ -218,8 +218,8 @@ int run(CliOptions const& opt) {
   auto const* exposure = bundle.exposure();
   std::cout << "gevgen_ship: done — " << opt.n_events << " events\n"
             << "  flux rays used:      "
-            << (exposure ? exposure->NFluxNeutrinos() : -1) << " (file: "
-            << describe_flux(bundle) << ")\n"
+            << (exposure ? exposure->NFluxNeutrinos() : -1)
+            << " (file: " << describe_flux(bundle) << ")\n"
             << "  global prob. scale:  " << bundle.driver->GlobProbScale()
             << '\n'
             << "  POT equivalent:      "

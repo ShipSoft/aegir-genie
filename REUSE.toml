@@ -3,15 +3,11 @@ SPDX-PackageName = "aegir-genie"
 SPDX-PackageSupplier = "CERN for the benefit of the SHiP Collaboration"
 SPDX-PackageDownloadLocation = "https://github.com/ShipSoft/aegir-genie"
 
+# The SHiP-authored source is LGPL-3.0-or-later (so it stays reusable and can
+# move to a shared package). The program produced by linking the GPL GENIE
+# library is a combined work distributed under GPL-3.0-or-later; see README.md.
 [[annotations]]
 path = "**"
 precedence = "aggregate"
-SPDX-FileCopyrightText = "CERN for the benefit of the SHiP Collaboration"
-SPDX-License-Identifier = "GPL-3.0-or-later"
-
-# Helper headers vendored from aegir (LGPL-3.0-or-later); see README.md.
-[[annotations]]
-path = ["src/mc_particle_source.hpp", "src/philox_rng.hpp"]
-precedence = "closest"
 SPDX-FileCopyrightText = "CERN for the benefit of the SHiP Collaboration"
 SPDX-License-Identifier = "LGPL-3.0-or-later"

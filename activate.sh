@@ -1,7 +1,7 @@
 #!/bin/bash
 # SPDX-FileCopyrightText: 2026 CERN for the benefit of the SHiP Collaboration
 #
-# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-License-Identifier: LGPL-3.0-or-later
 #
 # Pixi activation script for aegir-genie.
 # Sourced automatically by `pixi run` / `pixi shell`.

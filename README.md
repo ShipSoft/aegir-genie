@@ -1,7 +1,7 @@
 <!--
 SPDX-FileCopyrightText: 2026 CERN for the benefit of the SHiP Collaboration
 
-SPDX-License-Identifier: GPL-3.0-or-later
+SPDX-License-Identifier: LGPL-3.0-or-later
 -->
 
 # aegir-genie
@@ -23,15 +23,23 @@ through, with built-in protons-on-target accounting.
 GENIE is distributed under the GNU GPL, so anything that links it becomes a
 combined work under GPL terms. aegir itself is LGPL-3.0-or-later and must not
 acquire a GENIE dependency; therefore **everything that links GENIE lives
-here**, licensed **GPL-3.0-or-later**. aegir never links this code — phlex
-discovers the plugin at run time via `PHLEX_PLUGIN_PATH`, and workflows refer
-to it only by its `cpp:` name.
+here**. aegir never links this code — phlex discovers the plugin at run time
+via `PHLEX_PLUGIN_PATH`, and workflows refer to it only by its `cpp:` name.
+
+The SHiP-authored source in this repository stays **LGPL-3.0-or-later** — the
+same license as aegir — so it remains reusable and can move to a shared package
+without GPL contamination. Every file here is therefore LGPL. What is GPL is the
+*combined program*: the plugin binary linked against the GPL GENIE library must
+be distributed under **GPL-3.0-or-later** (with which LGPL-3.0-or-later is
+compatible), a term that comes from GENIE itself (whose own GPL text ships with
+the GENIE package). This repository's sources carry no GPL-licensed file, so
+`LICENSES/` holds only the LGPL text.
 
 Two helper headers (`src/mc_particle_source.hpp`, `src/philox_rng.hpp`) are
-vendored unchanged from aegir and keep their original LGPL-3.0-or-later
-notices; incorporating LGPL code in a GPL project is permitted. They should
-move to a shared package once one exists (tracked as follow-up in aegir's
-GENIE integration plan).
+vendored unchanged from aegir and keep their LGPL-3.0-or-later notices — now the
+same license as the rest of this repository. They should move to a shared
+package once one exists (tracked as follow-up in aegir's GENIE integration
+plan).
 
 Related, but without GENIE linkage (and therefore in aegir, not here):
 the `genie_reader_source` plugin, which reads pre-generated GENIE rootracker

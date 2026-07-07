@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: 2026 CERN for the benefit of the SHiP Collaboration
 //
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: LGPL-3.0-or-later
 
 #include "ship_flux_driver.hpp"
 
@@ -65,9 +65,9 @@ ShipFluxDriver::ShipFluxDriver(std::string const& path, bool cycle)
     max_energy_ = max_energy(0);
   }
   if (max_energy_ <= 0.0)
-    throw std::runtime_error("ship_flux_driver: '" + path +
-                             "' declares max_energy = " +
-                             std::to_string(max_energy_) + " GeV (must be > 0)");
+    throw std::runtime_error(
+        "ship_flux_driver: '" + path + "' declares max_energy = " +
+        std::to_string(max_energy_) + " GeV (must be > 0)");
 
   // --- flux rays ------------------------------------------------------------
   std::unique_ptr<ROOT::RNTupleReader> flux;
@@ -159,8 +159,7 @@ ShipFluxDriver::Ray ShipFluxDriver::peek_first_ray() {
   double const px = r.px(0);
   double const py = r.py(0);
   double const pz = r.pz(0);
-  ray.momentum.SetPxPyPzE(px, py, pz,
-                          std::sqrt(px * px + py * py + pz * pz));
+  ray.momentum.SetPxPyPzE(px, py, pz, std::sqrt(px * px + py * py + pz * pz));
   ray.position.SetXYZT(r.vx(0) * kMm2M, r.vy(0) * kMm2M, r.vz(0) * kMm2M,
                        r.t(0) * kNs2S);
   return ray;
@@ -189,8 +188,7 @@ double ShipFluxDriver::GetTotalExposure() const {
   // The whole file corresponds to pot_ protons on target; scale by the
   // fraction of rays used. Cycling accumulates full-file multiples.
   if (n_entries_ == 0) return 0.0;
-  return pot_ * static_cast<double>(n_used_) /
-         static_cast<double>(n_entries_);
+  return pot_ * static_cast<double>(n_used_) / static_cast<double>(n_entries_);
 }
 
 }  // namespace aegir

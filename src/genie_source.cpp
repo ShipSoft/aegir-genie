@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: 2026 CERN for the benefit of the SHiP Collaboration
 //
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: LGPL-3.0-or-later
 
 // genie_source.cpp — Phlex source plugin embedding the GENIE event generator
 //
@@ -166,11 +166,9 @@ PHLEX_REGISTER_SOURCE(s, config) {
   cfg.tune = config.get<std::string>("tune", std::string{"G18_02a_00_000"});
   cfg.spline_file = config.get<std::string>("splines");
   cfg.flux_file = config.get<std::string>("flux_file");
-  cfg.flux_format =
-      config.get<std::string>("flux_format", std::string{"ship"});
+  cfg.flux_format = config.get<std::string>("flux_format", std::string{"ship"});
   cfg.gdml_file = config.get<std::string>("gdml_file");
-  cfg.top_volume =
-      config.get<std::string>("top_volume", std::string{"World"});
+  cfg.top_volume = config.get<std::string>("top_volume", std::string{"World"});
   cfg.seed = config.get<long>("seed", 20260706L);
   cfg.max_path_lengths_file =
       config.get<std::string>("max_path_lengths_file", std::string{});

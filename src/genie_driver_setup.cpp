@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: 2026 CERN for the benefit of the SHiP Collaboration
 //
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: LGPL-3.0-or-later
 
 #include "genie_driver_setup.hpp"
 
@@ -149,8 +149,9 @@ GenieDriverBundle make_genie_driver(GenieSourceConfig const& cfg,
     // and file consumption aligned between the plugin and gevgen_ship.
     gsimple->LoadBeamSimData(cfg.flux_file, "no-offset-index");
     if (gsimple->End())
-      throw std::runtime_error(context + ": GSimpleNtpFlux loaded no flux "
-                                         "entries from '" +
+      throw std::runtime_error(context +
+                               ": GSimpleNtpFlux loaded no flux "
+                               "entries from '" +
                                cfg.flux_file + "'");
     gsimple->SetNumOfCycles(0);  // 0 = recycle indefinitely (as gevgen_fnal)
     bundle.flux = std::move(gsimple);
@@ -180,7 +181,7 @@ GenieDriverBundle make_genie_driver(GenieSourceConfig const& cfg,
   bundle.driver->UseFluxDriver(bundle.flux.get());
   bundle.driver->UseGeomAnalyzer(bundle.geom.get());
   bundle.driver->UseSplines();
-  bundle.driver->ForceSingleProbScale();          // unweighted events
+  bundle.driver->ForceSingleProbScale();             // unweighted events
   bundle.driver->KeepOnThrowingFluxNeutrinos(true);  // one interaction/event
 
   // The max-path-lengths geometry scan is expensive; cache it as XML when
@@ -189,10 +190,9 @@ GenieDriverBundle make_genie_driver(GenieSourceConfig const& cfg,
                           std::filesystem::exists(cfg.max_path_lengths_file);
   if (use_cached &&
       !bundle.driver->UseMaxPathLengths(cfg.max_path_lengths_file))
-    throw std::runtime_error(context +
-                             ": failed to load max path lengths from '" +
-                             cfg.max_path_lengths_file +
-                             "' — delete the file to recompute it");
+    throw std::runtime_error(
+        context + ": failed to load max path lengths from '" +
+        cfg.max_path_lengths_file + "' — delete the file to recompute it");
 
   bundle.driver->Configure();
 
