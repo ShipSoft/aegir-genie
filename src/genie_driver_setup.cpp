@@ -122,6 +122,11 @@ GenieDriverBundle make_genie_driver(GenieSourceConfig const& cfg,
   if (!geo)
     throw std::runtime_error(context + ": TGeoManager::Import failed on '" +
                              cfg.gdml_file + "'");
+  // Check the volume name here: ROOTGeomAnalyzer reports a bad top volume
+  // only deep inside GENIE's logging.
+  if (!geo->FindVolumeFast(cfg.top_volume.c_str()))
+    throw std::runtime_error(context + ": top_volume '" + cfg.top_volume +
+                             "' not found in '" + cfg.gdml_file + "'");
   bundle.geom = std::make_unique<genie::geometry::ROOTGeomAnalyzer>(geo);
   bundle.geom->SetLengthUnits(genie::units::centimeter);
   bundle.geom->SetDensityUnits(genie::units::gram_centimeter3);
