@@ -177,51 +177,41 @@ target_link_libraries(
 
 # ── targets ──────────────────────────────────────────────────────────────────
 
-# Phlex plugin: the embedded GENIE event generator source.
+# Shared driver code (flux driver + GMCJDriver assembly), compiled once and
+# reused by the plugin, the app and the test. PIC because genie_source is a
+# MODULE library (PIC objects link fine into the executables too).
 add_library(
-    genie_source
-    MODULE
-    src/genie_source.cpp
+    aegir_genie_core
+    OBJECT
     src/genie_driver_setup.cpp
     src/ship_flux_driver.cpp
 )
+set_target_properties(aegir_genie_core PROPERTIES POSITION_INDEPENDENT_CODE ON)
+target_include_directories(
+    aegir_genie_core
+    PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src ${Random123_INCLUDE_DIR}
+)
+target_link_libraries(
+    aegir_genie_core
+    PUBLIC ROOT::ROOTNTuple ROOT::Gdml GENIE::GENIE
+)
+
+# Phlex plugin: the embedded GENIE event generator source.
+add_library(genie_source MODULE src/genie_source.cpp)
 target_link_libraries(
     genie_source
-    PRIVATE
-        phlex::module
-        SHiP::SHiPDataModel
-        ROOT::ROOTNTuple
-        ROOT::Gdml
-        GENIE::GENIE
+    PRIVATE phlex::module SHiP::SHiPDataModel aegir_genie_core
 )
-target_include_directories(genie_source PRIVATE ${Random123_INCLUDE_DIR})
 
 # Standalone generator app: same driver assembly as the plugin, native GHEP
 # output for the gntpc/genie_reader_source validation path. No phlex.
-add_executable(
-    gevgen_ship
-    src/gevgen_ship.cpp
-    src/genie_driver_setup.cpp
-    src/ship_flux_driver.cpp
-)
-target_link_libraries(
-    gevgen_ship
-    PRIVATE ROOT::ROOTNTuple ROOT::Gdml GENIE::GENIE
-)
-target_include_directories(gevgen_ship PRIVATE ${Random123_INCLUDE_DIR})
+add_executable(gevgen_ship src/gevgen_ship.cpp)
+target_link_libraries(gevgen_ship PRIVATE aegir_genie_core)
 
 # Standalone flux-driver test: no phlex, no GMCJDriver, no splines — this
 # runs today (see tests/flux_driver_test.cpp).
-add_executable(
-    flux_driver_test
-    tests/flux_driver_test.cpp
-    src/ship_flux_driver.cpp
-)
-target_link_libraries(flux_driver_test PRIVATE ROOT::ROOTNTuple GENIE::GENIE)
-target_include_directories(
-    flux_driver_test
-    PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src
-)
+add_executable(flux_driver_test tests/flux_driver_test.cpp)
+target_link_libraries(flux_driver_test PRIVATE aegir_genie_core)
 
 # Install
 include(GNUInstallDirs)
