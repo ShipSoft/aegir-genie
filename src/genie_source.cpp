@@ -23,6 +23,7 @@
 
 #include <SHiP/MCParticle.hpp>
 #include <cstdint>
+#include <map>
 #include <memory>
 #include <stdexcept>
 #include <string>
@@ -45,15 +46,52 @@ class GenieSource : public phlex::source {
       : cfg_{std::move(cfg)},
         bundle_{aegir::make_genie_driver(cfg_, "genie_source")} {}
 
+  // Phlex may dispatch generate() calls out of event-number order (serial
+  // concurrency guarantees mutual exclusion, not FIFO — observed in practice
+  // as occasional swaps under TBB scheduling). The flux driver is shared
+  // sequential state, so generation must happen in event-number order for
+  // determinism and for identity with the strictly-ordered gevgen_ship app:
+  // generate ahead in order when a later event is requested first, cache the
+  // results, and serve earlier requests from the cache. The cache stays as
+  // small as the scheduler's lookahead. Assumes 0-based contiguous event
+  // numbering (generate_layers' default starting_number).
   std::vector<SHiP::MCParticle> generate(phlex::data_cell_index const& id) {
-    aegir::reseed_event(cfg_.seed, static_cast<std::uint32_t>(id.number()));
+    auto const requested = id.number();
+    if (auto it = ready_.find(requested); it != ready_.end()) {
+      auto out = std::move(it->second);
+      ready_.erase(it);
+      return out;
+    }
+    if (requested < next_in_order_)
+      throw std::runtime_error("genie_source: event " +
+                               std::to_string(requested) +
+                               " requested twice — cannot regenerate without "
+                               "disturbing the flux sequence");
+    if (requested - next_in_order_ > kMaxLookahead)
+      throw std::runtime_error(
+          "genie_source: event " + std::to_string(requested) +
+          " requested while event " + std::to_string(next_in_order_) +
+          " is next in order — event numbering does not look 0-based and "
+          "contiguous (generate_layers starting_number 0)");
+    while (next_in_order_ < requested) {
+      ready_.emplace(next_in_order_, generate_in_order(next_in_order_));
+      ++next_in_order_;
+    }
+    ++next_in_order_;
+    return generate_in_order(requested);
+  }
+
+  std::vector<SHiP::MCParticle> generate_in_order(std::size_t event_number) {
+    aegir::reseed_event(cfg_.seed, static_cast<std::uint32_t>(event_number));
 
     std::unique_ptr<genie::EventRecord> event{bundle_.driver->GenerateEvent()};
     if (!event)
       throw std::runtime_error(
           "genie_source: GMCJDriver::GenerateEvent returned no event for "
           "event " +
-          std::to_string(id.number()));
+          std::to_string(event_number));
+    aegir::trace_event(static_cast<std::uint32_t>(event_number), *event,
+                       *bundle_.flux);
 
     // Interaction vertex in detector coordinates, SI units (m, s); the
     // per-particle X4() positions are nuclear-scale offsets relative to the
@@ -112,6 +150,12 @@ class GenieSource : public phlex::source {
  private:
   aegir::GenieSourceConfig cfg_;
   aegir::GenieDriverBundle bundle_;  // initialized after cfg_ (declared last)
+
+  // In-order generation bookkeeping (see generate()); only touched from the
+  // serialized provider function, so no synchronisation is needed.
+  static constexpr std::size_t kMaxLookahead = 10000;
+  std::size_t next_in_order_ = 0;
+  std::map<std::size_t, std::vector<SHiP::MCParticle>> ready_;
 };
 
 }  // namespace

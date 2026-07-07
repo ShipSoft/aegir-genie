@@ -47,7 +47,8 @@ plugin.
 | `gevgen_ship` app | compiles and links; `--help` and config validation work |
 | `ShipFluxDriver` (flux-file reading, unit conversions, exposure accounting) | works, unit-tested (`pixi run test`) |
 | constructor-time config validation | works, unit-tested |
-| event generation (`GMCJDriver::GenerateEvent`) | **blocked — no cross-section splines packaged yet** (see below) |
+| event generation (`GMCJDriver::GenerateEvent`) | works with user-supplied splines; embedded and `gevgen_ship` paths verified identical |
+| packaged cross-section splines | **not published yet** (see below) |
 
 ## Plugins and tools
 
@@ -71,6 +72,25 @@ Configuration keys (see `workflows/genie_st.jsonnet` for a full example):
 GENIE is not thread-safe (unsynchronised singletons, global `gRandom` /
 `gGeoManager`), so the source runs serialised — same pattern as aegir's other
 generator sources.
+
+Two details make runs reproducible and byte-comparable across paths:
+
+- **Every RNG stream GENIE draws from is reseeded per event**
+  (`aegir::reseed_event`): GENIE's `RandomGen`, ROOT's global `gRandom`,
+  *and* Pythia6's internal RANMAR generator (`MRPY` common block) — the last
+  is a hidden stream that GENIE never reseeds and whose state would
+  otherwise leak from one event's hadronization into the next.
+- **Events are generated in event-number order.** Phlex's serialised
+  scheduling guarantees mutual exclusion, not FIFO order (occasional swaps
+  under TBB scheduling are observed in practice), and the flux driver is
+  shared sequential state — so the source generates ahead in order and
+  caches results when a later event is requested first. This assumes
+  `generate_layers`' default 0-based contiguous event numbering.
+
+Together, each event is a pure function of (config, seed, event number, flux
+position), and a job is reproducible end to end. For debugging, set
+`AEGIR_GENIE_RNG_TRACE=1` to print per-event seed/flux/vertex state to
+stderr in both the plugin and `gevgen_ship`; the traces diff line by line.
 
 ## Flux input
 
@@ -113,14 +133,24 @@ output plugins in the example workflow come from aegir: point
 `PHLEX_PLUGIN_PATH` at an aegir build/install as well, or install the aegir
 conda package into this environment.
 
+Note that this repo's environment deliberately does **not** include the
+`geant4` package (a heavy dependency nothing here links): full workflows
+with `geant4_module` fail here with unset Geant4 data variables
+(`G4ENSDFSTATEDATA` etc.). Run full chains from an aegir environment with
+this repo's `build/` appended to `PHLEX_PLUGIN_PATH` (and `GENIE` pointing
+at this environment's `share/genie`), or add `geant4` to this environment.
+Generator-only workflows (genie source + `sim_output_module` in `mc_only`
+mode) run here directly.
+
 ## Validating the embedded source: `gevgen_ship`
 
 The plugin's physics must be checkable independently of phlex. `gevgen_ship`
 is a plain command-line generator that assembles the **identical** machinery
 (`src/genie_driver_setup.hpp`: same `ShipFluxDriver`, `ROOTGeomAnalyzer`,
-`GMCJDriver` settings, same per-event Philox reseeding — identical config and
-seed give the same event sequence in both), but writes native GENIE GHEP
-output via `genie::NtpWriter`:
+`GMCJDriver` settings, same per-event reseeding and generation order —
+identical config and seed give the **exactly identical** event sequence in
+both paths, verified event-for-event on a 200-event smoke sample), but
+writes native GENIE GHEP output via `genie::NtpWriter`:
 
 ```sh
 pixi run ./build/gevgen_ship -f nu_flux.root -g ship.gdml -x gxspl-ship.xml \

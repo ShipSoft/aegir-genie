@@ -175,6 +175,7 @@ int run(CliOptions const& opt) {
                    "spline coverage.\n";
       return 1;
     }
+    aegir::trace_event(static_cast<std::uint32_t>(i), *event, *bundle.flux);
     writer.AddEventRecord(static_cast<int>(i), event.get());
 
     if ((i + 1) % 100 == 0 || i + 1 == opt.n_events)

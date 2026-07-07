@@ -5,12 +5,20 @@
 #include "genie_driver_setup.hpp"
 
 #include <TGeoManager.h>
+#include <TPythia6.h>
+#include <TRandom3.h>
 
+#include <cstdio>
+#include <cstdlib>
 #include <filesystem>
+#include <functional>
 #include <stdexcept>
+#include <thread>
 
 #include "Framework/Conventions/Units.h"
+#include "Framework/EventGen/EventRecord.h"
 #include "Framework/EventGen/GMCJDriver.h"
+#include "Framework/GHEP/GHepParticle.h"
 #include "Framework/Numerical/RandomGen.h"
 #include "Framework/Utils/AppInit.h"
 #include "Framework/Utils/RunOpt.h"
@@ -108,7 +116,42 @@ void reseed_event(long base_seed, std::uint32_t event_number) {
   // TRandom3 seeds are UInt_t; keep the full 32-bit range but avoid 0
   // (which TRandom3 interprets as "seed from clock").
   auto const seed = 1 + static_cast<long>(rng.uniform() * 4294967294.0);
+  // Reseeds GENIE's TRandom3 *and* ROOT's global gRandom (a plain global,
+  // not thread-local — verified for the conda ROOT build).
   genie::RandomGen::Instance()->SetSeed(seed);
+  // Pythia6's hadronization draws come from its own Fortran RANMAR generator
+  // (pyr_ in libPythia6, MRPY common block) — a hidden RNG stream that
+  // RandomGen::SetSeed does not touch and whose state otherwise carries
+  // across events. Reseed it too (MRPY(1) must be < 900000000; MRPY(2) = 0
+  // forces re-initialization on the next PYR call), so a GENIE event is a
+  // pure function of (base seed, event number, flux position).
+  auto* py6 = TPythia6::Instance();
+  py6->SetMRPY(1, 1 + static_cast<int>(rng.uniform() * 899999998.0));
+  py6->SetMRPY(2, 0);
+  if (std::getenv("AEGIR_GENIE_RNG_TRACE")) {
+    std::fprintf(stderr,
+                 "[rng-trace] reseed event=%u base_seed=%ld seed=%ld "
+                 "thread=%zu gRandom=%p gRandom_first=%.17g\n",
+                 event_number, base_seed, seed,
+                 std::hash<std::thread::id>{}(std::this_thread::get_id()),
+                 static_cast<void*>(gRandom), [] {
+                   TRandom3 probe;
+                   probe.SetSeed(gRandom->GetSeed());
+                   return probe.Rndm();
+                 }());
+  }
+}
+
+void trace_event(std::uint32_t event_number, genie::EventRecord const& event,
+                 ShipFluxDriver& flux) {
+  if (!std::getenv("AEGIR_GENIE_RNG_TRACE")) return;
+  auto const* vtx = event.Vertex();
+  std::fprintf(stderr,
+               "[rng-trace] event=%u flux_index=%ld rays_used=%ld "
+               "vtx=(%.17g, %.17g, %.17g) n_entries=%d probe_pdg=%d\n",
+               event_number, flux.Index(), flux.NFluxNeutrinos(), vtx->X(),
+               vtx->Y(), vtx->Z(), event.GetEntries(),
+               event.Particle(0) ? event.Particle(0)->Pdg() : 0);
 }
 
 }  // namespace aegir

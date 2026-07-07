@@ -23,6 +23,7 @@
 #include "genie_config.hpp"
 
 namespace genie {
+class EventRecord;
 class GMCJDriver;
 namespace geometry {
 class ROOTGeomAnalyzer;
@@ -59,11 +60,19 @@ struct GenieDriverBundle {
 GenieDriverBundle make_genie_driver(GenieSourceConfig const& cfg,
                                     std::string const& context);
 
-// Reseed GENIE for one event: derives a per-event seed from (base seed,
-// event number) with Philox, so re-running the same event yields the same
-// draws regardless of what was generated before — and the plugin and the
-// standalone app produce identical sequences for identical configs.
-// RandomGen::SetSeed also reseeds ROOT's global gRandom.
+// Reseed every RNG stream GENIE draws from for one event — GENIE's
+// RandomGen (TRandom3), ROOT's global gRandom, and Pythia6's internal
+// RANMAR generator — with Philox-derived seeds from (base seed, event
+// number). Together with in-order flux consumption this makes each event a
+// pure function of (config, base seed, event number), so the plugin and the
+// standalone app produce identical sequences for identical configs, and
+// re-running a job reproduces it exactly.
 void reseed_event(long base_seed, std::uint32_t event_number);
+
+// Debug aid: when the AEGIR_GENIE_RNG_TRACE environment variable is set,
+// reseed_event and trace_event print per-event RNG/flux/vertex state to
+// stderr, so the plugin and app paths can be diffed line by line.
+void trace_event(std::uint32_t event_number, genie::EventRecord const& event,
+                 ShipFluxDriver& flux);
 
 }  // namespace aegir
