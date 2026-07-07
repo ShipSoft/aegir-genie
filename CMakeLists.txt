@@ -1,12 +1,13 @@
 # SPDX-FileCopyrightText: 2026 CERN for the benefit of the SHiP Collaboration
 #
-# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-License-Identifier: LGPL-3.0-or-later
 
 cmake_minimum_required(VERSION 3.21)
 project(
     aegir-genie
     VERSION 0.1.0
-    DESCRIPTION "GENIE neutrino event generation plugin for the aegir simulation framework"
+    DESCRIPTION
+        "GENIE neutrino event generation plugin for the aegir simulation framework"
     LANGUAGES CXX
 )
 
@@ -57,7 +58,8 @@ if(NOT GENIE_PREFIX)
     get_filename_component(GENIE_PREFIX ${GENIE_BINDIR} DIRECTORY)
 else()
     find_program(
-        GENIE_CONFIG genie-config
+        GENIE_CONFIG
+        genie-config
         PATHS ${GENIE_PREFIX}/bin
         NO_DEFAULT_PATH
         REQUIRED
@@ -73,8 +75,8 @@ else()
 endif()
 
 execute_process(
-    COMMAND ${CMAKE_COMMAND} -E env GENIE=${GENIE_ENV_DIR} ${GENIE_CONFIG}
-            --libs
+    COMMAND
+        ${CMAKE_COMMAND} -E env GENIE=${GENIE_ENV_DIR} ${GENIE_CONFIG} --libs
     OUTPUT_VARIABLE GENIE_CONFIG_LIBS
     OUTPUT_STRIP_TRAILING_WHITESPACE
     COMMAND_ERROR_IS_FATAL ANY
@@ -109,9 +111,7 @@ endif()
 
 set(GENIE_LIBRARY_FILES "")
 foreach(lib IN LISTS GENIE_LIBRARIES)
-    set(lib_file
-        "${GENIE_LIBDIR}/lib${lib}${CMAKE_SHARED_LIBRARY_SUFFIX}"
-    )
+    set(lib_file "${GENIE_LIBDIR}/lib${lib}${CMAKE_SHARED_LIBRARY_SUFFIX}")
     if(NOT EXISTS "${lib_file}")
         message(FATAL_ERROR "GENIE library not found: ${lib_file}")
     endif()
@@ -126,7 +126,16 @@ find_path(LOG4CPP_INCLUDE_DIR log4cpp/Category.hh REQUIRED)
 
 # GENIE's underlinked libraries need these resolved at link time; take them
 # from the same prefix as GENIE so they match its build exactly.
-foreach(dep log4cpp xml2 LHAPDF EGPythia6 Pythia6 gsl gslcblas)
+foreach(
+    dep
+    log4cpp
+    xml2
+    LHAPDF
+    EGPythia6
+    Pythia6
+    gsl
+    gslcblas
+)
     find_library(
         GENIE_DEP_${dep}
         ${dep}
@@ -195,18 +204,20 @@ add_executable(
     src/genie_driver_setup.cpp
     src/ship_flux_driver.cpp
 )
-target_link_libraries(gevgen_ship PRIVATE ROOT::ROOTNTuple ROOT::Gdml GENIE::GENIE)
+target_link_libraries(
+    gevgen_ship
+    PRIVATE ROOT::ROOTNTuple ROOT::Gdml GENIE::GENIE
+)
 target_include_directories(gevgen_ship PRIVATE ${Random123_INCLUDE_DIR})
 
 # Standalone flux-driver test: no phlex, no GMCJDriver, no splines — this
 # runs today (see tests/flux_driver_test.cpp).
-add_executable(flux_driver_test tests/flux_driver_test.cpp
+add_executable(
+    flux_driver_test
+    tests/flux_driver_test.cpp
     src/ship_flux_driver.cpp
 )
-target_link_libraries(
-    flux_driver_test
-    PRIVATE ROOT::ROOTNTuple GENIE::GENIE
-)
+target_link_libraries(flux_driver_test PRIVATE ROOT::ROOTNTuple GENIE::GENIE)
 target_include_directories(
     flux_driver_test
     PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src
@@ -222,6 +233,7 @@ install(DIRECTORY workflows/ DESTINATION share/aegir-genie/workflows)
 enable_testing()
 add_test(
     NAME flux_driver
-    COMMAND flux_driver_test
+    COMMAND
+        flux_driver_test
         ${CMAKE_CURRENT_BINARY_DIR}/flux_driver_test_synthetic.root
 )

@@ -1,0 +1,24 @@
+cff-version: 1.2.0
+message: If you use this software, please cite it as below.
+title: aegir-genie
+version: 0.1.0
+date-released: "2026-07-07"
+url: https://github.com/ShipSoft/aegir-genie
+repository-code: https://github.com/ShipSoft/aegir-genie
+type: software
+license: LGPL-3.0-or-later
+authors:
+  - name: The SHiP Collaboration
+abstract: >-
+  GENIE neutrino event generation for the SHiP experiment's aegir simulation
+  framework, embedded as a phlex source plugin that drives a genie::GMCJDriver
+  (flux x cross-section splines x TGeo geometry). The SHiP-authored source is
+  LGPL-3.0-or-later; the program produced by linking the GPL GENIE library is a
+  combined work under LGPL-3.0-or-later's compatible GPL-3.0-or-later terms.
+keywords:
+  - physics
+  - particle-physics
+  - simulation
+  - neutrino
+  - GENIE
+  - SHiP
