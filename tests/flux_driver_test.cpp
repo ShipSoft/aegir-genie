@@ -366,27 +366,44 @@ void test_config_validation(std::string const& flux_path) {
   check(true, "remote flux URL accepted (existence left to the driver)");
 }
 
+// Removes a synthetic file also when a test throws. Single-owner RAII: the
+// deleted copy operations (which also suppress implicit moves) prevent a
+// double std::remove on the same path.
+struct FileRemover {
+  std::string path;
+  explicit FileRemover(std::string const& p) : path(p) {}
+  FileRemover(FileRemover const&) = delete;
+  FileRemover& operator=(FileRemover const&) = delete;
+  ~FileRemover() { std::remove(path.c_str()); }
+};
+
 }  // namespace
 
 int main(int argc, char** argv) {
   std::string const path =
       argc > 1 ? argv[1] : "flux_driver_test_synthetic.root";
-
-  write_flux_file(path);
-  std::cout << "wrote synthetic flux file: " << path << "\n\n";
-
-  test_metadata_and_conversions(path);
-  test_exhaustion_and_clear(path);
-  test_cycling(path);
-  test_flux_particles(path);
-  test_bad_files();
-  test_config_validation(path);
-
   std::string const gsimple_path = path + ".gsimple.root";
-  test_gsimple_driver(gsimple_path);
+  FileRemover const remove_flux{path};
+  FileRemover const remove_gsimple{gsimple_path};
 
-  std::remove(path.c_str());
-  std::remove(gsimple_path.c_str());
+  // The checks record failures; anything thrown out of the tests themselves
+  // (must-not-throw paths, file writing, driver construction) is caught here
+  // so it is reported instead of std::terminate'ing the binary.
+  try {
+    write_flux_file(path);
+    std::cout << "wrote synthetic flux file: " << path << "\n\n";
+
+    test_metadata_and_conversions(path);
+    test_exhaustion_and_clear(path);
+    test_cycling(path);
+    test_flux_particles(path);
+    test_bad_files();
+    test_config_validation(path);
+    test_gsimple_driver(gsimple_path);
+  } catch (std::exception const& e) {
+    std::cout << "\nUNEXPECTED EXCEPTION: " << e.what() << '\n';
+    return 1;
+  }
 
   if (failures) {
     std::cout << "\n" << failures << " check(s) FAILED\n";
