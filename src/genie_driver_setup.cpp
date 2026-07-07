@@ -83,6 +83,20 @@ GenieDriverBundle make_genie_driver(GenieSourceConfig const& cfg,
   bundle.flux = std::make_unique<ShipFluxDriver>(cfg.flux_file,
                                                  /*cycle=*/true);
 
+  // Max-path-length scan strategy: scan with the actual flux, as gevgen_fnal
+  // does by default. The alternative box scanner throws random-direction
+  // rays from the bounding-box faces and never samples beam-like axial paths
+  // through long, thin volumes, so it underestimates the maximum
+  // density-weighted path lengths for a forward beam — GMCJDriver's
+  // probability normalisation then fails mid-run ("negative no-interaction
+  // probability", followed by exit(1)). The scan consumes flux rays (10000
+  // by default) before event generation; ComputeMaxPathLengths resets the
+  // exposure history afterwards via Clear("CycleHistory"), so the scan does
+  // not count towards the delivered POT. Consequently a cached
+  // max_path_lengths_file depends on the flux as well as the geometry —
+  // regenerate it when either changes.
+  bundle.geom->SetScannerFlux(bundle.flux.get());
+
   // 7. MC job driver.
   bundle.driver = std::make_unique<genie::GMCJDriver>();
   bundle.driver->UseFluxDriver(bundle.flux.get());

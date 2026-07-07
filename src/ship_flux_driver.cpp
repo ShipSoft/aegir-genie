@@ -153,10 +153,13 @@ bool ShipFluxDriver::GenerateNext() {
 }
 
 void ShipFluxDriver::Clear(Option_t* /*opt*/) {
-  // Rewind to the start of the file; cumulative exposure (n_used_) is kept —
-  // rays already thrown count towards the delivered POT.
+  // Reset the driver state: rewind to the start of the file and drop the
+  // accumulated exposure. GMCJDriver / ROOTGeomAnalyzer call this with
+  // option "CycleHistory" after the max-path-length flux scan, precisely so
+  // that scan rays do not count towards the delivered POT.
   index_ = -1;
   end_ = false;
+  n_used_ = 0;
 }
 
 void ShipFluxDriver::GenerateWeighted(bool gen_weighted) {

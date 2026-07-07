@@ -170,12 +170,14 @@ void test_exhaustion_and_clear(std::string const& path) {
         "ray count");
   check_close(driver.GetTotalExposure(), kPot, "full-file exposure = pot");
 
-  driver.Clear("");
+  driver.Clear("CycleHistory");
   check(!driver.End(), "Clear() rewinds");
+  check(driver.NFluxNeutrinos() == 0,
+        "Clear() drops the exposure history (max-path-length scan rays must "
+        "not count towards POT)");
   check(driver.GenerateNext(), "GenerateNext() works again after Clear()");
   check(driver.Index() == 0, "rewound to first entry");
-  check(driver.NFluxNeutrinos() == static_cast<long>(kRays.size()) + 1,
-        "exposure keeps accumulating across Clear()");
+  check(driver.NFluxNeutrinos() == 1, "exposure accumulates afresh");
 }
 
 void test_cycling(std::string const& path) {
