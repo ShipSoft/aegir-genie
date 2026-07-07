@@ -56,8 +56,9 @@ class ShipFluxDriver : public genie::GFluxI,
   void GenerateWeighted(bool gen_weighted) override;
 
   // GFluxExposureI interface (kPOTs): the file represents pot() protons on
-  // target; the exposure delivered so far scales with the fraction of
-  // entries used (cycling accumulates across passes).
+  // target; the exposure delivered so far scales with the fraction of the
+  // total statistical weight consumed (cycling accumulates across passes).
+  // NFluxNeutrinos() is the raw ray count, not weight-corrected.
   double GetTotalExposure() const override;
   long int NFluxNeutrinos() const override { return n_used_; }
 
@@ -87,6 +88,7 @@ class ShipFluxDriver : public genie::GFluxI,
   double pot_ = 0.0;
   double max_energy_ = 0.0;
   std::uint64_t n_entries_ = 0;
+  double total_weight_ = 0.0;  // Σ weight over the file (> 0, checked)
 
   // current ray
   long int index_ = -1;  // entry number of the current ray
@@ -95,7 +97,8 @@ class ShipFluxDriver : public genie::GFluxI,
   TLorentzVector p4_;  // GeV
   TLorentzVector x4_;  // SI: m, s
   bool end_ = false;
-  long int n_used_ = 0;  // rays generated so far (across cycles)
+  long int n_used_ = 0;       // rays generated so far (across cycles)
+  double used_weight_ = 0.0;  // Σ weight of the rays generated so far
 
   genie::PDGCodeList pdg_list_;
   bool pdg_list_built_ = false;

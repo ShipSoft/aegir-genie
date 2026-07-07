@@ -104,6 +104,18 @@ ShipFluxDriver::ShipFluxDriver(std::string const& path, bool cycle)
         "' — schema v1 requires pdg, vx, vy, vz, t, px, py, pz, weight (" +
         e.what() + ")");
   }
+
+  // Total statistical weight, for the exposure accounting: a ray of weight w
+  // stands for w rays' worth of flux, so delivered POT scales with the
+  // weight consumed, not the entry count — the two differ mid-cycle for
+  // files with non-uniform weights (merged samples). One startup scan over
+  // the columnar weight field.
+  for (std::uint64_t i = 0; i < n_entries_; ++i)
+    total_weight_ += reader_->weight(i);
+  if (!(total_weight_ > 0.0))
+    throw std::runtime_error("ship_flux_driver: flux weights in '" + path +
+                             "' sum to " + std::to_string(total_weight_) +
+                             " (must be > 0)");
 }
 
 ShipFluxDriver::~ShipFluxDriver() = default;
@@ -149,6 +161,7 @@ bool ShipFluxDriver::GenerateNext() {
 
   index_ = static_cast<long int>(next);
   ++n_used_;
+  used_weight_ += weight_;
   return true;
 }
 
@@ -173,6 +186,7 @@ void ShipFluxDriver::Clear(Option_t* /*opt*/) {
   index_ = -1;
   end_ = false;
   n_used_ = 0;
+  used_weight_ = 0.0;
 }
 
 void ShipFluxDriver::GenerateWeighted(bool gen_weighted) {
@@ -186,9 +200,10 @@ void ShipFluxDriver::GenerateWeighted(bool gen_weighted) {
 
 double ShipFluxDriver::GetTotalExposure() const {
   // The whole file corresponds to pot_ protons on target; scale by the
-  // fraction of rays used. Cycling accumulates full-file multiples.
-  if (n_entries_ == 0) return 0.0;
-  return pot_ * static_cast<double>(n_used_) / static_cast<double>(n_entries_);
+  // fraction of the total statistical weight consumed (for uniform weights
+  // this reduces to the entry-count fraction). Cycling accumulates
+  // full-file multiples. total_weight_ > 0 is enforced at construction.
+  return pot_ * used_weight_ / total_weight_;
 }
 
 }  // namespace aegir
