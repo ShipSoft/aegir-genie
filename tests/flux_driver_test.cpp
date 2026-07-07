@@ -28,6 +28,7 @@
 
 #include "Tools/Flux/GSimpleNtpFlux.h"
 #include "genie_config.hpp"
+#include "philox_rng.hpp"
 #include "ship_flux_driver.hpp"
 
 namespace {
@@ -337,6 +338,23 @@ void test_gsimple_driver(std::string const& path) {
               "two passes deliver twice the file's POT (UsedPOTs)", 1e-9);
 }
 
+void test_philox_substreams() {
+  std::cout << "PhiloxRng per-event sub-streams:\n";
+  auto first_draw = [](std::uint32_t seed, std::uint32_t event) {
+    aegir::PhiloxRng rng{seed, 0x47454E49, event};  // as reseed_event
+    return rng.uniform();
+  };
+  check(first_draw(20260706, 0) == first_draw(20260706, 0),
+        "same (seed, event) reproduces the same draw");
+  check(first_draw(20260706, 0) != first_draw(20260706, 1),
+        "events select distinct sub-streams");
+  // Regression: a key derived as seed ^ event collides across base seeds
+  // (20260706 ^ 1 == 20260707 ^ 0), correlating productions run with
+  // consecutive seeds; counter sub-streams must not.
+  check(first_draw(20260706, 1) != first_draw(20260707, 0),
+        "no collision between (seed, event) pairs with equal seed ^ event");
+}
+
 void test_config_validation(std::string const& flux_path) {
   std::cout << "genie_source config validation:\n";
 
@@ -381,6 +399,10 @@ void test_config_validation(std::string const& flux_path) {
   bad = cfg;
   bad.top_volume.clear();
   expect_throw(bad, "top_volume", "empty top_volume rejected");
+
+  bad = cfg;
+  bad.seed = 4294967296L;  // 2^32: would alias a 32-bit Philox key of 0
+  expect_throw(bad, "32 bits", "seed wider than 32 bits rejected");
 
   bad = cfg;
   bad.max_path_lengths_file = "/nonexistent/dir/maxpl.xml";
@@ -429,6 +451,7 @@ int main(int argc, char** argv) {
     test_cycling(path);
     test_flux_particles(path);
     test_bad_files();
+    test_philox_substreams();
     test_config_validation(path);
     test_gsimple_driver(gsimple_path);
   } catch (std::exception const& e) {
