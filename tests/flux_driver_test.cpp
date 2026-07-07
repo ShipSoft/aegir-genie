@@ -65,7 +65,8 @@ std::vector<Ray> const kRays{
 constexpr double kPot = 6.5041e10;
 constexpr double kMaxEnergy = 35.001;
 
-void write_flux_file(std::string const& path) {
+void write_flux_file(std::string const& path,
+                     std::vector<Ray> const& rays = kRays) {
   {
     auto model = ROOT::RNTupleModel::Create();
     auto pdg = model->MakeField<std::int32_t>("pdg");
@@ -88,7 +89,7 @@ void write_flux_file(std::string const& path) {
     auto writer =
         ROOT::RNTupleWriter::Recreate(std::move(model), "nu_flux", path);
     std::int64_t i = 0;
-    for (auto const& ray : kRays) {
+    for (auto const& ray : rays) {
       *pdg = ray.pdg;
       *vx = ray.vx;
       *vy = ray.vy;
@@ -214,6 +215,22 @@ void test_flux_particles(std::string const& path) {
   check(list.ExistsInPDGCodeList(14) && list.ExistsInPDGCodeList(-14) &&
             list.ExistsInPDGCodeList(12),
         "expected flavours present");
+
+  // A code PDGLibrary does not know must fail loudly, not be dropped
+  // (PDGCodeList::push_back silently skips it otherwise).
+  auto bad_rays = kRays;
+  bad_rays.front().pdg = 9999999;
+  std::string const bad_path = path + ".badpdg.root";
+  write_flux_file(bad_path, bad_rays);
+  try {
+    aegir::ShipFluxDriver bad_driver{bad_path};
+    bad_driver.FluxParticles();
+    check(false, "unknown PDG code throws");
+  } catch (std::runtime_error const& e) {
+    check(std::string{e.what()}.contains("9999999"),
+          "unknown PDG code throws naming the code");
+  }
+  std::remove(bad_path.c_str());
 }
 
 void test_bad_files() {

@@ -116,10 +116,18 @@ genie::PDGCodeList const& ShipFluxDriver::FluxParticles() {
     for (std::uint64_t i = 0; i < n_entries_; ++i)
       codes.insert(reader_->pdg(i));
     for (auto code : codes) pdg_list_.push_back(code);
-    if (pdg_list_.empty())
+    // PDGCodeList::push_back silently skips codes PDGLibrary does not know
+    // (a GENIE log line only); rays with such codes would still be served to
+    // a GMCJDriver that configured no generator for them, so fail loudly.
+    if (pdg_list_.size() != codes.size()) {
+      std::string dropped;
+      for (auto code : codes)
+        if (!pdg_list_.ExistsInPDGCodeList(code))
+          dropped += (dropped.empty() ? "" : ", ") + std::to_string(code);
       throw std::runtime_error(
-          "ship_flux_driver: no valid neutrino PDG codes found in '" + path_ +
-          "'");
+          "ship_flux_driver: '" + path_ +
+          "' contains PDG code(s) unknown to GENIE's PDGLibrary: " + dropped);
+    }
     pdg_list_built_ = true;
   }
   return pdg_list_;
