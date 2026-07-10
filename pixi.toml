@@ -40,6 +40,7 @@ libnsl = "*"
 cmake = ">=3.27"
 ninja = "*"
 cxx-compiler = "*"
+genie-splines-ship = ">=3.6.2,<4"
 
 [environments]
 default = { solve-group = "default" }
