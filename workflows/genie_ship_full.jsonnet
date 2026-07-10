@@ -1,0 +1,49 @@
+// SPDX-FileCopyrightText: 2026 CERN for the benefit of the SHiP Collaboration
+//
+// SPDX-License-Identifier: LGPL-3.0-or-later
+
+// Full end-to-end chain on the production SHiP geometry: embedded GENIE
+// (gsimple flux, production splines) -> Geant4 -> RNTuple output. This is
+// the configuration validated in docs/validation.md.
+//
+// Render with the input locations as external variables, e.g.
+//   jsonnet -V inputs=/path/to/inputs -V gdml=/path/to/ship_geometry_tgeo.gdml \
+//       workflows/genie_ship_full.jsonnet
+// where `inputs` holds the (locally staged! never xrootd) shuffled gsimple
+// flux, the spline XML, and the max-path-lengths cache. Run from an aegir
+// environment (Geant4 data) with this repo's build/ on PHLEX_PLUGIN_PATH
+// and GENIE pointing at this repo's env share/genie — see README.md.
+local S = std.extVar('inputs');
+local gdml = std.extVar('gdml');
+{
+  driver: { cpp: 'generate_layers', layers: { event: { total: 200 } } },
+  sources: {
+    genie: {
+      cpp: 'genie_source',
+      tune: 'G18_02a_02_11b',
+      splines: S + '/gxspl-ship.xml',
+      flux_file: S + '/gsimple_flux_shuffled.root',
+      flux_format: 'gsimple',
+      gdml_file: gdml,
+      top_volume: 'cave',
+      seed: 20260709,
+      // Computed and saved on the first run; flux-dependent (see README).
+      max_path_lengths_file: S + '/maxpl_ship.xml',
+    },
+    field: { cpp: 'field_null_provider' },
+    geometry: {
+      cpp: 'geometry_gdml_provider',
+      gdml_file: gdml,  // the same file genie imports into TGeo
+      sensitive_volumes: ['sbt_sensors', 'TimDetBar'],
+    },
+  },
+  modules: {
+    geant4: { cpp: 'geant4_module', physics_list: 'FTFP_BERT', concurrency: 1, verbosity: 0 },
+    output: {
+      cpp: 'sim_output_module',
+      mode: 'full',
+      rntuple_file: 'genie_ship_full_output.root',
+      histo_file: 'genie_ship_full_validation.root',
+    },
+  },
+}

@@ -51,12 +51,11 @@ plugin.
 | Piece | State |
 |---|---|
 | `pixi install` | works |
-| `genie_source` plugin | compiles and links against the GENIE 3.06.02 conda package |
-| `gevgen_ship` app | compiles and links; `--help` and config validation work |
+| `genie_source` plugin | full chain (GENIE → Geant4 → output) validated on the production SHiP geometry |
+| `gevgen_ship` app | validated against `gevgen_fnal` on identical inputs — see [docs/validation.md](docs/validation.md) |
 | `ShipFluxDriver` (flux-file reading, unit conversions, exposure accounting) | works, unit-tested (`pixi run test`) |
-| constructor-time config validation | works, unit-tested |
-| event generation (`GMCJDriver::GenerateEvent`) | works with user-supplied splines; embedded and `gevgen_ship` paths verified identical |
-| packaged cross-section splines | **not published yet** (see below) |
+| event generation (`GMCJDriver::GenerateEvent`) | works; embedded and `gevgen_ship` paths verified content-identical (incl. full geometry) |
+| packaged cross-section splines | `genie-splines-ship` on prefix.dev/ship (production build; averaged-A extension from build 101) |
 
 ## Plugins and tools
 
