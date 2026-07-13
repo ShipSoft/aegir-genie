@@ -93,6 +93,25 @@ and seed — the shared driver assembly and per-event reseeding give the
 same event sequence through either entry point, on the production
 geometry as on the test setup.
 
+## Shuffling flux files
+
+`scripts/shuffle_gsimple.C` produces a shuffled copy of a GSimple flux
+file (seeded, reproducible; co-shuffles a filled `aux` branch; copies
+`meta` unchanged; prints per-flavour totals and slice compositions as
+built-in verification):
+
+```sh
+export ROOT_INCLUDE_PATH="$CONDA_PREFIX/include/GENIE"
+root -l -b -q \
+  -e 'gSystem->Load("libGFwEG"); gSystem->Load("libGTlFlx");' \
+  'scripts/shuffle_gsimple.C+("in.root","out.root",12345)'
+```
+
+About four minutes and ~3 GB of memory for a 50M-entry file. Stage the
+input locally first — and note the macro deliberately reads the input
+sequentially into memory: shuffled-order tree reads decompress one
+basket per entry and take hours instead.
+
 ## Reproducing
 
 See the commands in this repository's README (generation) and

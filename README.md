@@ -146,6 +146,12 @@ input. Facts worth knowing about the format and driver:
   an `aux` branch that is **empty** (no aux names declared in the meta, no
   values) — parent/ancestry information is not available from it, unlike
   schema-v1 ship files.
+- **Stage the file locally and shuffle it first.** Entry-wise xrootd reads
+  stall the max-path-lengths flux scan, and merged files are typically
+  flavour-block-ordered, which biases any sample smaller than one full file
+  cycle — shuffle once with `scripts/shuffle_gsimple.C` (seeded,
+  reproducible, verifies itself; see
+  [docs/validation.md](docs/validation.md)).
 - Reproducibility caveat: after a max-path-lengths flux scan the GSimple
   driver's entry cursor cannot be rewound (unlike `ShipFluxDriver`), so a
   run that computes the scan and a run that loads it from the cache consume
