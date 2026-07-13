@@ -126,13 +126,11 @@ void shuffle_gsimple(const char* in, const char* out, unsigned seed = 12345) {
   // shuffled order (identical to what was written).
   const int nslices = 4;
   const Long64_t width = 100000 < n / nslices ? 100000 : n / nslices;
-  printf("output composition in %d slices of %lld entries:\n", nslices,
-         width);
+  printf("output composition in %d slices of %lld entries:\n", nslices, width);
   for (int s = 0; s < nslices; ++s) {
     const Long64_t start = s * (n / nslices);
     std::map<int, Long64_t> c;
-    for (Long64_t i = start; i < start + width; ++i)
-      ++c[entries[perm[i]].pdg];
+    for (Long64_t i = start; i < start + width; ++i) ++c[entries[perm[i]].pdg];
     printf("  [%10lld]", start);
     for (auto const& [pdg, cnt] : c)
       printf("  %d: %.1f%%", pdg, 100.0 * cnt / width);
