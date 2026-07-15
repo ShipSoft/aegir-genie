@@ -18,7 +18,8 @@
 //   - a schema-v1 neutrino flux file (scripts/make_flux_ntuple.py writes a
 //     synthetic one; scripts/convert_fairship_nu_flux.py in aegir converts
 //     real productions),
-//   - the detector GDML (the same file the geant4 gdml provider loads).
+//   - the GeoModel geometry db (the same file the geant4 geomodel provider
+//     loads; bare filenames resolve via $SHIPGEOMETRY_ROOT/share/geometry).
 {
   driver: {
     cpp: 'generate_layers',
@@ -37,8 +38,7 @@
       // gevgen_fnal input format the neutrino group produces; root:// URLs
       // work). See README.md § Flux input.
       flux_format: 'ship',
-      gdml_file: 'ship.gdml',
-      top_volume: 'World',
+      geometry_file: 'ship_geometry.db',
       seed: 20260706,
       // Cache for the max-path-lengths flux scan: computed and saved on the
       // first run, loaded on subsequent runs. Depends on geometry AND flux —
@@ -48,8 +48,9 @@
     // aegir plugins from here on.
     field: { cpp: 'field_null_provider' },
     geometry: {
-      cpp: 'geometry_gdml_provider',
-      gdml_file: 'ship.gdml',  // the same file genie imports into TGeo
+      cpp: 'geometry_geomodel_provider',
+      db_file: 'ship_geometry.db',  // the same db genie analyzes
+      sensitive_volumes: [],
     },
   },
   modules: {

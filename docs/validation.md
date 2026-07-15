@@ -6,6 +6,16 @@ SPDX-License-Identifier: LGPL-3.0-or-later
 
 # Validation against gevgen_fnal
 
+> **Note (geometry backend change).** This validation was performed with the
+> previous geometry path (GDML imported into TGeo via GENIE's
+> `ROOTGeomAnalyzer`). The generator now analyzes the GeoModel-built Geant4
+> geometry directly (`ShipGeomAnalyzer`); the target-nucleus derivation
+> (averaged-A ion per element) is unchanged, but the validation should be
+> repeated on the GeoModel geometry — including an old-vs-new comparison on
+> the *same* detector description (export the GeoModel geometry to GDML with
+> aegir's `export_gdml` and run it through an old build). Max-path-lengths
+> caches produced for the GDML geometry are invalid and must be regenerated.
+
 The embedded generation path was validated against GENIE's own
 `gevgen_fnal` application — the tool the FairShip neutrino workflow
 adopts — by generating samples with both on **identical inputs**: the

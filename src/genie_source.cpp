@@ -7,8 +7,8 @@
 // Provides MCParticle vectors from GENIE neutrino interactions generated
 // in situ: a genie::GMCJDriver convolves the SHiP neutrino flux (schema-v1
 // ntuple via ShipFluxDriver, or a GENIE GSimple flux file — see the
-// flux_format config key) with cross-section splines and a TGeo
-// geometry imported from the same GDML the Geant4 simulation uses, so
+// flux_format config key) with cross-section splines and the GeoModel
+// geometry the Geant4 simulation tracks through (via ShipGeomAnalyzer), so
 // interaction vertices are placed consistently with the tracked geometry
 // (the library-embedding approach of nutools/GENIEHelper and gSeaGen).
 //
@@ -167,8 +167,8 @@ PHLEX_REGISTER_SOURCE(s, config) {
   cfg.spline_file = config.get<std::string>("splines");
   cfg.flux_file = config.get<std::string>("flux_file");
   cfg.flux_format = config.get<std::string>("flux_format", std::string{"ship"});
-  cfg.gdml_file = config.get<std::string>("gdml_file");
-  cfg.top_volume = config.get<std::string>("top_volume", std::string{"World"});
+  cfg.geometry_file = config.get<std::string>("geometry_file");
+  cfg.top_volume = config.get<std::string>("top_volume", std::string{});
   cfg.seed = config.get<long>("seed", 20260706L);
   cfg.max_path_lengths_file =
       config.get<std::string>("max_path_lengths_file", std::string{});

@@ -25,6 +25,10 @@ root_cxx_standard = "==23"
 genie = { version = ">=3.6.2", build = "pythia6_*" }
 random123 = "*"
 libjsonnet = "*"
+# Geometry service (GeoModel-backed); the geometry analyzer navigates the
+# converted Geant4 geometry, so Geant4 is a direct dependency too.
+shipgeometryservice = "*"
+geant4 = ">=11.3"
 
 # C++ libraries (phlex's cmake config lacks find_dependency for these)
 libboost-devel = "*"
@@ -41,6 +45,15 @@ cmake = ">=3.27"
 ninja = "*"
 cxx-compiler = "*"
 genie-splines-ship = ">=3.6.2,<4"
+
+# Developing against unreleased sibling checkouts (same pattern as aegir):
+# uncomment locally, never commit uncommented.
+#
+# [feature.dev]
+# channels = [{ channel = "../ship-local-channel", priority = 10 }]
+#
+# [feature.dev.dependencies]
+# shipgeometryservice = { path = "../geometry_service" }
 
 [environments]
 default = { solve-group = "default" }

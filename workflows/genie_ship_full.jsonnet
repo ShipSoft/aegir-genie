@@ -7,14 +7,16 @@
 // the configuration validated in docs/validation.md.
 //
 // Render with the input locations as external variables, e.g.
-//   jsonnet -V inputs=/path/to/inputs -V gdml=/path/to/ship_geometry_tgeo.gdml \
+//   jsonnet -V inputs=/path/to/inputs -V geometry=ship_geometry.db \
 //       workflows/genie_ship_full.jsonnet
 // where `inputs` holds the (locally staged! never xrootd) shuffled gsimple
-// flux, the spline XML, and the max-path-lengths cache. Run from an aegir
-// environment (Geant4 data) with this repo's build/ on PHLEX_PLUGIN_PATH
-// and GENIE pointing at this repo's env share/genie — see README.md.
+// flux, the spline XML, and the max-path-lengths cache, and `geometry` is a
+// GeoModel db path (bare filenames resolve via
+// $SHIPGEOMETRY_ROOT/share/geometry). Run from an aegir environment (Geant4
+// data) with this repo's build/ on PHLEX_PLUGIN_PATH and GENIE pointing at
+// this repo's env share/genie — see README.md.
 local S = std.extVar('inputs');
-local gdml = std.extVar('gdml');
+local geometry = std.extVar('geometry');
 {
   driver: { cpp: 'generate_layers', layers: { event: { total: 200 } } },
   sources: {
@@ -24,16 +26,17 @@ local gdml = std.extVar('gdml');
       splines: S + '/gxspl-ship.xml',
       flux_file: S + '/gsimple_flux_shuffled.root',
       flux_format: 'gsimple',
-      gdml_file: gdml,
-      top_volume: 'cave',
+      // The GeoModel world *is* the cave (no surrounding GDML super-world),
+      // so no top_volume restriction is needed.
+      geometry_file: geometry,
       seed: 20260709,
       // Computed and saved on the first run; flux-dependent (see README).
       max_path_lengths_file: S + '/maxpl_ship.xml',
     },
     field: { cpp: 'field_null_provider' },
     geometry: {
-      cpp: 'geometry_gdml_provider',
-      gdml_file: gdml,  // the same file genie imports into TGeo
+      cpp: 'geometry_geomodel_provider',
+      db_file: geometry,  // the same db genie analyzes
       sensitive_volumes: ['sbt_sensors', 'TimDetBar'],
     },
   },

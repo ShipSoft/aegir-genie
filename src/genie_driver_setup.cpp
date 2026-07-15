@@ -5,9 +5,6 @@
 #include "genie_driver_setup.hpp"
 
 #include <TChain.h>
-#include <TGeoBBox.h>
-#include <TGeoManager.h>
-#include <TGeoVolume.h>
 #include <TPythia6.h>
 #include <TRandom3.h>
 
@@ -18,18 +15,18 @@
 #include <stdexcept>
 #include <thread>
 
-#include "Framework/Conventions/Units.h"
 #include "Framework/EventGen/EventRecord.h"
 #include "Framework/EventGen/GMCJDriver.h"
 #include "Framework/GHEP/GHepParticle.h"
 #include "Framework/Numerical/RandomGen.h"
 #include "Framework/Utils/AppInit.h"
 #include "Framework/Utils/RunOpt.h"
+#include "GeometryService/SHiPGeometryService.h"
 #include "Tools/Flux/GFluxExposureI.h"
 #include "Tools/Flux/GSimpleNtpFlux.h"
-#include "Tools/Geometry/ROOTGeomAnalyzer.h"
 #include "philox_rng.hpp"
 #include "ship_flux_driver.hpp"
+#include "ship_geom_analyzer.hpp"
 
 namespace aegir {
 
@@ -40,10 +37,10 @@ namespace {
 constexpr std::uint32_t kGenieStream = 0x47454E49;  // "GENI"
 
 // Startup sanity log: the first flux ray (SI meters, per the GFluxI
-// contract) next to the geometry bounding box (geometry units, cm for
-// ROOT/GDML), so coordinate-frame or unit mismatches between flux file and
+// contract) next to the scan volume's bounding box in the same frame and
+// units, so coordinate-frame or unit mismatches between flux file and
 // geometry are visible immediately.
-void log_frame_check(GenieSourceConfig const& cfg, TGeoManager const& geo,
+void log_frame_check(GenieSourceConfig const& cfg, ShipGeomAnalyzer const& geom,
                      genie::GFluxI& flux) {
   double x = 0, y = 0, z = 0, e = 0;
   int pdg = 0;
@@ -65,18 +62,15 @@ void log_frame_check(GenieSourceConfig const& cfg, TGeoManager const& geo,
     e = entry->E;
     pdg = entry->pdg;
   }
-  auto const* top = geo.GetTopVolume();
-  auto const* box = dynamic_cast<TGeoBBox const*>(top->GetShape());
-  double const dx = box ? box->GetDX() : -1;
-  double const dy = box ? box->GetDY() : -1;
-  double const dz = box ? box->GetDZ() : -1;
+  auto const& box = geom.extents();
   std::fprintf(
       stderr,
       "[genie-driver] frame check: first flux ray (%s) pdg=%d E=%g GeV at "
-      "(%g, %g, %g) m; geometry top volume '%s' half-lengths (%g, %g, %g) cm "
-      "= (%g, %g, %g) m\n",
-      cfg.flux_format.c_str(), pdg, e, x, y, z, top->GetName(), dx, dy, dz,
-      dx / 100., dy / 100., dz / 100.);
+      "(%g, %g, %g) m; scan volume '%s' spans x [%g, %g] y [%g, %g] "
+      "z [%g, %g] m\n",
+      cfg.flux_format.c_str(), pdg, e, x, y, z,
+      cfg.top_volume.empty() ? "<world>" : cfg.top_volume.c_str(), box.lo.X(),
+      box.hi.X(), box.lo.Y(), box.hi.Y(), box.lo.Z(), box.hi.Z());
 }
 
 }  // namespace
@@ -92,7 +86,8 @@ genie::flux::GFluxExposureI* GenieDriverBundle::exposure() const {
 }
 
 GenieDriverBundle make_genie_driver(GenieSourceConfig const& cfg,
-                                    std::string const& context) {
+                                    std::string const& context,
+                                    ShipGeomAnalyzer::G4Teardown teardown) {
   cfg.validate(context);
 
   // 1. Tune selection — before any access to PDGLibrary or AlgFactory.
@@ -116,21 +111,13 @@ GenieDriverBundle make_genie_driver(GenieSourceConfig const& cfg,
 
   GenieDriverBundle bundle;
 
-  // 5. Geometry: the same GDML the Geant4 side tracks through, imported
-  //    into TGeo (lengths in cm, ROOT's native unit).
-  auto* geo = TGeoManager::Import(cfg.gdml_file.c_str());
-  if (!geo)
-    throw std::runtime_error(context + ": TGeoManager::Import failed on '" +
-                             cfg.gdml_file + "'");
-  // Check the volume name here: ROOTGeomAnalyzer reports a bad top volume
-  // only deep inside GENIE's logging.
-  if (!geo->FindVolumeFast(cfg.top_volume.c_str()))
-    throw std::runtime_error(context + ": top_volume '" + cfg.top_volume +
-                             "' not found in '" + cfg.gdml_file + "'");
-  bundle.geom = std::make_unique<genie::geometry::ROOTGeomAnalyzer>(geo);
-  bundle.geom->SetLengthUnits(genie::units::centimeter);
-  bundle.geom->SetDensityUnits(genie::units::gram_centimeter3);
-  bundle.geom->SetTopVolName(cfg.top_volume);
+  // 5. Geometry: the same GeoModel db the Geant4 side tracks through,
+  //    converted to Geant4 and analyzed directly (ShipGeomAnalyzer works in
+  //    SI, no unit configuration needed).
+  bundle.geom = std::make_unique<ShipGeomAnalyzer>(
+      ship::SHiPGeometryService::fromFile(
+          resolve_geometry_file(cfg.geometry_file, context)),
+      cfg.top_volume, teardown);
 
   // 6. Flux. Both drivers cycle through the file indefinitely so
   //    KeepOnThrowingFluxNeutrinos always finds a ray; delivered POT is
@@ -165,7 +152,7 @@ GenieDriverBundle make_genie_driver(GenieSourceConfig const& cfg,
                                                    /*cycle=*/true);
   }
 
-  log_frame_check(cfg, *geo, *bundle.flux);
+  log_frame_check(cfg, *bundle.geom, *bundle.flux);
 
   // Max-path-length scan strategy: scan with the actual flux, as gevgen_fnal
   // does by default. The alternative box scanner throws random-direction
