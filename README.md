@@ -61,7 +61,7 @@ plugin.
 
 | Name | Type | Description |
 |--------|------|-------------|
-| `genie_source` | phlex source | Embedded GENIE: flux × splines × TGeo geometry → `MCParticle` vectors |
+| `genie_source` | phlex source | Embedded GENIE: flux × splines × GeoModel geometry → `MCParticle` vectors |
 | `gevgen_ship` | CLI app | Same driver assembly, native GHEP output for validation (no phlex) |
 
 Configuration keys (see `workflows/genie_st.jsonnet` for a full example):
@@ -72,10 +72,18 @@ Configuration keys (see `workflows/genie_st.jsonnet` for a full example):
 | `splines` | *required* | cross-section spline XML (`gmkspl` output) |
 | `flux_file` | *required* | neutrino flux file (format per `flux_format`; `root://` URLs work for gsimple) |
 | `flux_format` | `ship` | `ship` (schema-v1 ntuple, see below) or `gsimple` (GENIE GSimple flux, the gevgen_fnal input format) |
-| `gdml_file` | *required* | detector geometry, imported with `TGeoManager::Import` |
-| `top_volume` | `World` | TGeo top volume for the geometry analyzer |
+| `geometry_file` | *required* | detector geometry: GeoModel SQLite db, the same file aegir's `geometry_geomodel_provider` loads (bare filenames resolve via `$SHIPGEOMETRY_ROOT/share/geometry`) |
+| `top_volume` | *(unset)* | optional: restrict GENIE to this logical volume; unset scans the entire world |
 | `seed` | `20260706` | base seed; each event reseeds GENIE via Philox for reproducibility |
-| `max_path_lengths_file` | *(unset)* | optional XML cache for the max-path-lengths flux scan: loaded if it exists, otherwise computed and saved. The scan uses the flux, so the cache depends on **geometry and flux** — regenerate it when either changes |
+| `max_path_lengths_file` | *(unset)* | optional XML cache for the max-path-lengths flux scan: loaded if it exists, otherwise computed and saved. The scan uses the flux, so the cache depends on **geometry and flux** — regenerate it when either changes. **A stale cache is loaded silently and skews the probability normalisation** — caches made for the old GDML/TGeo geometry are invalid |
+
+The geometry is analyzed directly on the GeoModel-built Geant4 geometry
+(`ShipGeomAnalyzer`, a `genie::GeomAnalyzerI` over the SHiP geometry
+service's ray scanner) — no GDML/TGeo conversion sits between GENIE and the
+geometry the Geant4 simulation tracks through. The target-nucleus list uses
+one averaged-A ion per element (e.g. natural Cu → Cu-64), exactly as GENIE's
+`ROOTGeomAnalyzer` derived it from the GDML, so the `genie-splines-ship`
+spline package remains valid.
 
 GENIE is not thread-safe (unsynchronised singletons, global `gRandom` /
 `gGeoManager`), so the source runs serialised — same pattern as aegir's other
@@ -125,7 +133,7 @@ input. Facts worth knowing about the format and driver:
 
 - Entry positions are **lab-frame meters** (time in seconds) — already the
   SI units `GFluxI::Position()` promises; we take the lab frame to be the
-  SHiP global frame, i.e. the frame of the GDML geometry. At startup the
+  SHiP global frame, i.e. the frame of the GeoModel geometry. At startup the
   driver assembly logs the first flux ray next to the geometry bounding box
   (`[genie-driver] frame check: ...`), so a frame or unit mismatch is
   visible immediately.
@@ -185,27 +193,28 @@ output plugins in the example workflow come from aegir: point
 `PHLEX_PLUGIN_PATH` at an aegir build/install as well, or install the aegir
 conda package into this environment.
 
-Note that this repo's environment deliberately does **not** include the
-`geant4` package (a heavy dependency nothing here links): full workflows
-with `geant4_module` fail here with unset Geant4 data variables
-(`G4ENSDFSTATEDATA` etc.). Run full chains from an aegir environment with
-this repo's `build/` appended to `PHLEX_PLUGIN_PATH` (and `GENIE` pointing
-at this environment's `share/genie`), or add `geant4` to this environment.
-Generator-only workflows (genie source + `sim_output_module` in `mc_only`
-mode) run here directly.
+Note that while this repo's environment includes the `geant4` package (the
+geometry analyzer navigates the converted Geant4 geometry), it does not set
+up the Geant4 *data* files: full workflows with `geant4_module` fail here
+with unset Geant4 data variables (`G4ENSDFSTATEDATA` etc.). Run full chains
+from an aegir environment with this repo's `build/` appended to
+`PHLEX_PLUGIN_PATH` (and `GENIE` pointing at this environment's
+`share/genie`). Generator-only workflows (genie source +
+`sim_output_module` in `mc_only` mode) run here directly.
 
 ## Validating the embedded source: `gevgen_ship`
 
 The plugin's physics must be checkable independently of phlex. `gevgen_ship`
 is a plain command-line generator that assembles the **identical** machinery
-(`src/genie_driver_setup.hpp`: same `ShipFluxDriver`, `ROOTGeomAnalyzer`,
+(`src/genie_driver_setup.hpp`: same `ShipFluxDriver`, `ShipGeomAnalyzer`,
 `GMCJDriver` settings, same per-event reseeding and generation order —
 identical config and seed give the **exactly identical** event sequence in
 both paths, verified event-for-event on a 200-event smoke sample), but
 writes native GENIE GHEP output via `genie::NtpWriter`:
 
 ```sh
-pixi run ./build/gevgen_ship -f nu_flux.root -g ship.gdml -x gxspl-ship.xml \
+pixi run ./build/gevgen_ship -f nu_flux.root -g ship_geometry.db \
+    -x gxspl-ship.xml \
     -n 1000 -o genie_events            # -> genie_events.0.ghep.root
 pixi run gntpc -i genie_events.0.ghep.root -f rootracker
 ```
@@ -239,10 +248,7 @@ without generating.
    data package); only the LHAPDF library ships with the conda package.
 3. **A real flux file** — convert a FairShip neutrino production to schema v1
    (weights and POT included).
-4. **The detector GDML** — export the production geometry (for GeoModel-built
-   geometry via `G4GDMLParser`, aegir plan Phase 3) so GENIE's TGeo import
-   and Geant4 track the identical geometry.
-5. Validate against the `genie_reader_source` path (same flux + geometry
+4. Validate against the `genie_reader_source` path (same flux + geometry
    through `gevgen_ship` + `gntpc -f rootracker`, see above): vertex
    material/z distributions, energy spectra, final-state multiplicities
    (aegir plan, Phase 4).

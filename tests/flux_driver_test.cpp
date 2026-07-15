@@ -372,7 +372,7 @@ void test_config_validation(std::string const& flux_path) {
   aegir::GenieSourceConfig cfg;
   cfg.spline_file = flux_path;  // any existing file will do here
   cfg.flux_file = flux_path;
-  cfg.gdml_file = flux_path;
+  cfg.geometry_file = flux_path;
   cfg.validate();  // must not throw
   check(true, "complete config validates");
 
@@ -389,16 +389,16 @@ void test_config_validation(std::string const& flux_path) {
   expect_throw(bad, "flux_file", "missing flux_file key rejected");
 
   bad = cfg;
-  bad.gdml_file = "/nonexistent/geometry.gdml";
-  expect_throw(bad, "does not exist", "missing GDML rejected");
+  bad.geometry_file = "/nonexistent/ship_geometry.db";
+  expect_throw(bad, "cannot locate", "unlocatable geometry db rejected");
+
+  bad = cfg;
+  bad.geometry_file.clear();
+  expect_throw(bad, "geometry_file", "missing geometry_file key rejected");
 
   bad = cfg;
   bad.seed = 0;
   expect_throw(bad, "seed", "non-positive seed rejected");
-
-  bad = cfg;
-  bad.top_volume.clear();
-  expect_throw(bad, "top_volume", "empty top_volume rejected");
 
   bad = cfg;
   bad.seed = 4294967296L;  // 2^32: would alias a 32-bit Philox key of 0

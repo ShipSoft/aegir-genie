@@ -17,6 +17,8 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # Dependencies (from the default pixi environment)
 find_package(SHiPDataModel REQUIRED)
+# Geometry service (GeoModel-backed, brings Geant4 via its public interface).
+find_package(SHiPGeometryService CONFIG REQUIRED)
 
 # Phlex's cmake config does not call find_dependency for its transitive deps
 # (still true as of phlex 0.3.0: its generated deps block is empty), so declare
@@ -41,7 +43,6 @@ find_package(
         GenVector
         EG
         Geom
-        Gdml
         ROOTNTuple
 )
 
@@ -185,6 +186,7 @@ add_library(
     OBJECT
     src/genie_driver_setup.cpp
     src/ship_flux_driver.cpp
+    src/ship_geom_analyzer.cpp
 )
 set_target_properties(aegir_genie_core PROPERTIES POSITION_INDEPENDENT_CODE ON)
 target_include_directories(
@@ -193,7 +195,10 @@ target_include_directories(
 )
 target_link_libraries(
     aegir_genie_core
-    PUBLIC ROOT::ROOTNTuple ROOT::Gdml GENIE::GENIE
+    PUBLIC
+        ROOT::ROOTNTuple
+        GENIE::GENIE
+        SHiPGeometryService::SHiPGeometryService
 )
 
 # Phlex plugin: the embedded GENIE event generator source.
@@ -213,6 +218,11 @@ target_link_libraries(gevgen_ship PRIVATE aegir_genie_core)
 add_executable(flux_driver_test tests/flux_driver_test.cpp)
 target_link_libraries(flux_driver_test PRIVATE aegir_genie_core)
 
+# Standalone geometry-analyzer test: builds a small GeoModel geometry
+# in-process; needs the PDG library ($GENIE) but no splines.
+add_executable(geom_analyzer_test tests/geom_analyzer_test.cpp)
+target_link_libraries(geom_analyzer_test PRIVATE aegir_genie_core)
+
 # Install
 include(GNUInstallDirs)
 install(TARGETS genie_source LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
@@ -227,3 +237,4 @@ add_test(
         flux_driver_test
         ${CMAKE_CURRENT_BINARY_DIR}/flux_driver_test_synthetic.root
 )
+add_test(NAME geom_analyzer COMMAND geom_analyzer_test)

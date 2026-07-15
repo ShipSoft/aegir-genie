@@ -14,11 +14,29 @@
 
 #pragma once
 
+#include <cstdlib>
 #include <filesystem>
 #include <stdexcept>
 #include <string>
 
 namespace aegir {
+
+// Resolve a GeoModel geometry db path the same way aegir's
+// geometry_geomodel_provider does: an existing path is used as-is; otherwise
+// the bare filename is looked up under $SHIPGEOMETRY_ROOT/share/geometry
+// (the flat install layout of the shipgeometry package).
+inline std::string resolve_geometry_file(std::string const& path,
+                                         std::string const& context) {
+  namespace fs = std::filesystem;
+  if (fs::exists(path)) return path;
+  auto resolved = fs::path(path).filename();
+  if (auto const* root = std::getenv("SHIPGEOMETRY_ROOT"))
+    resolved = fs::path(root) / "share" / "geometry" / resolved;
+  if (fs::exists(resolved)) return resolved.string();
+  throw std::runtime_error(context + ": cannot locate geometry db '" + path +
+                           "'; set SHIPGEOMETRY_ROOT or provide an absolute "
+                           "path");
+}
 
 struct GenieSourceConfig {
   std::string tune = "G18_02a_00_000";
@@ -28,8 +46,12 @@ struct GenieSourceConfig {
   // 'gsimple': GENIE GSimple flux (genie::flux::GSimpleNtpFlux) — the format
   // the SHiP neutrino group produces for gevgen_fnal.
   std::string flux_format = "ship";
-  std::string gdml_file;  // detector geometry for TGeoManager::Import
-  std::string top_volume = "World";
+  // Detector geometry: GeoModel SQLite db (resolved via
+  // resolve_geometry_file), the same db the Geant4 side tracks through.
+  std::string geometry_file;
+  // Optional: restrict GENIE to the named logical volume ('cave' in
+  // production); empty scans the entire world.
+  std::string top_volume;
   long seed = 20260706;  // base seed; each event derives its own via Philox
   // Optional cache for the (expensive) max-path-lengths geometry scan: if the
   // file exists it is loaded, otherwise it is computed and saved there.
@@ -40,8 +62,6 @@ struct GenieSourceConfig {
     namespace fs = std::filesystem;
     if (tune.empty())
       throw std::runtime_error(context + ": 'tune' must not be empty");
-    if (top_volume.empty())
-      throw std::runtime_error(context + ": 'top_volume' must not be empty");
     if (seed <= 0)
       throw std::runtime_error(
           context +
@@ -76,7 +96,10 @@ struct GenieSourceConfig {
     // Remote URLs (root://... via xrootd) cannot be checked on the local
     // filesystem; leave those to the flux driver's own error handling.
     if (!flux_file.contains("://")) require_file("flux_file", flux_file);
-    require_file("gdml_file", gdml_file);
+    if (geometry_file.empty())
+      throw std::runtime_error(context +
+                               ": config key 'geometry_file' is required");
+    resolve_geometry_file(geometry_file, context);  // throws if unlocatable
     if (!max_path_lengths_file.empty() && !fs::exists(max_path_lengths_file)) {
       // Will be created after the geometry scan — its directory must exist.
       auto const dir = fs::path{max_path_lengths_file}.parent_path();

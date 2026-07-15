@@ -4,7 +4,7 @@
 
 // genie_driver_setup.hpp — shared GENIE MC-job assembly
 //
-// One code path builds the GMCJDriver machinery (tune, splines, TGeo
+// One code path builds the GMCJDriver machinery (tune, splines, GeoModel
 // geometry, SHiP flux driver) for both consumers, so their events are
 // directly comparable:
 //   - the phlex source plugin (genie_source.cpp), and
@@ -21,6 +21,7 @@
 #include <string>
 
 #include "genie_config.hpp"
+#include "ship_geom_analyzer.hpp"
 
 namespace genie {
 class EventRecord;
@@ -28,9 +29,6 @@ class GFluxI;
 class GMCJDriver;
 namespace flux {
 class GFluxExposureI;
-}
-namespace geometry {
-class ROOTGeomAnalyzer;
 }
 }  // namespace genie
 
@@ -43,7 +41,7 @@ namespace aegir {
 // genie::flux::GSimpleNtpFlux ('gsimple'); consumers should use the GFluxI /
 // GFluxExposureI interfaces where possible.
 struct GenieDriverBundle {
-  std::unique_ptr<genie::geometry::ROOTGeomAnalyzer> geom;
+  std::unique_ptr<ShipGeomAnalyzer> geom;
   std::unique_ptr<genie::GFluxI> flux;
   std::unique_ptr<genie::GMCJDriver> driver;
 
@@ -59,17 +57,21 @@ struct GenieDriverBundle {
 };
 
 // Validates the config and assembles a fully Configure()d GMCJDriver:
-// tune -> Messenger -> RandGen -> splines -> GDML/ROOTGeomAnalyzer -> cycling
-// flux driver -> GMCJDriver (UseSplines, ForceSingleProbScale,
+// tune -> Messenger -> RandGen -> splines -> GeoModel/ShipGeomAnalyzer ->
+// cycling flux driver -> GMCJDriver (UseSplines, ForceSingleProbScale,
 // KeepOnThrowingFluxNeutrinos), with optional XML caching of the expensive
 // max-path-lengths geometry scan. Logs the first flux ray and the geometry
 // bounding box at startup so coordinate-frame mismatches are visible
 // immediately. `context` prefixes error messages (e.g. "genie_source",
-// "gevgen_ship").
+// "gevgen_ship"). `teardown` chooses who cleans the Geant4 stores at the end
+// (see ShipGeomAnalyzer::G4Teardown); standalone apps with no other Geant4
+// user must pass kCleanStores.
 //
 // GENIE is a web of unsynchronized singletons: call this once per process.
-GenieDriverBundle make_genie_driver(GenieSourceConfig const& cfg,
-                                    std::string const& context);
+GenieDriverBundle make_genie_driver(
+    GenieSourceConfig const& cfg, std::string const& context,
+    ShipGeomAnalyzer::G4Teardown teardown =
+        ShipGeomAnalyzer::G4Teardown::kLeaveToProcess);
 
 // Reseed every RNG stream GENIE draws from for one event — GENIE's
 // RandomGen (TRandom3), ROOT's global gRandom, and Pythia6's internal

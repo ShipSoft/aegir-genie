@@ -6,9 +6,9 @@
 //
 // Command-line counterpart of the genie_source phlex plugin, sharing the
 // exact same driver assembly (genie_driver_setup.hpp): SHiP flux ntuple ×
-// cross-section splines × TGeo geometry through a genie::GMCJDriver, with
-// the same per-event Philox reseeding — identical config and seed produce
-// the same event sequence in both.
+// cross-section splines × GeoModel geometry through a genie::GMCJDriver,
+// with the same per-event Philox reseeding — identical config and seed
+// produce the same event sequence in both.
 //
 // Unlike the plugin, output is native GENIE GHEP (genie::NtpWriter), so the
 // file converts with `gntpc -f rootracker` and reads back through aegir's
@@ -49,11 +49,12 @@ constexpr char kUsage[] =
     R"(gevgen_ship — SHiP neutrino event generator (GENIE, GHEP output)
 
 Usage:
-  gevgen_ship -f FLUX -g GDML -x SPLINES -n EVENTS [options]
+  gevgen_ship -f FLUX -g GEOMETRY -x SPLINES -n EVENTS [options]
 
 Required:
   -f, --flux FILE           neutrino flux file (see --flux-format)
-  -g, --geometry FILE       detector GDML (imported with TGeoManager::Import)
+  -g, --geometry FILE       detector geometry: GeoModel .db (bare filenames
+                            resolve via $SHIPGEOMETRY_ROOT/share/geometry)
   -x, --splines FILE        cross-section splines (gmkspl XML output)
   -n, --events N            number of events to generate
 
@@ -67,7 +68,8 @@ Options:
                             (NAME.RUN.ghep.root)   [default: gevgen_ship]
   -t, --tune TUNE           GENIE tune; must match the splines
                             [default: G18_02a_00_000]
-  -v, --top-volume NAME     TGeo top volume        [default: World]
+  -v, --top-volume NAME     restrict GENIE to this logical volume
+                            [default: the entire world]
   -s, --seed SEED           base seed; each event derives its own via Philox
                             [default: 20260706]
   -m, --max-path-lengths FILE
@@ -113,7 +115,7 @@ CliOptions parse_args(int argc, char** argv) {
     } else if (a == "--flux-format") {
       opt.cfg.flux_format = value(i, a);
     } else if (a == "-g" || a == "--geometry") {
-      opt.cfg.gdml_file = value(i, a);
+      opt.cfg.geometry_file = value(i, a);
     } else if (a == "-x" || a == "--splines") {
       opt.cfg.spline_file = value(i, a);
     } else if (a == "-n" || a == "--events") {
@@ -164,8 +166,11 @@ std::string describe_flux(aegir::GenieDriverBundle const& bundle) {
 
 int run(CliOptions const& opt) {
   // Same assembly as the plugin: config validation (clear errors for missing
-  // files), tune, splines, geometry, flux, Configure().
-  auto bundle = aegir::make_genie_driver(opt.cfg, "gevgen_ship");
+  // files), tune, splines, geometry, flux, Configure(). kCleanStores:
+  // nothing else in this process tears the Geant4 stores down.
+  auto bundle = aegir::make_genie_driver(
+      opt.cfg, "gevgen_ship",
+      aegir::ShipGeomAnalyzer::G4Teardown::kCleanStores);
 
   if (opt.dry_run) {
     std::cout << "gevgen_ship: dry run OK — tune '" << opt.cfg.tune
