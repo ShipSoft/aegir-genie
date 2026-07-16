@@ -6,6 +6,12 @@
 // (gsimple flux, production splines) -> Geant4 -> RNTuple output. This is
 // the configuration validated in docs/validation.md.
 //
+// KNOWN LIMITATION (issue #11): this in-process combination of genie_source
+// and geant4_module currently segfaults during aegir's geometry construction
+// (Geant4 MT allows only one geometry-creating thread per process; upstream
+// Geant4 bug #2747). Use the two-step path meanwhile: gevgen_ship ->
+// gntpc -f rootracker -> aegir's genie_reader_source.
+//
 // Render with the input locations as external variables, e.g.
 //   jsonnet -V inputs=/path/to/inputs -V geometry=ship_geometry.db \
 //       workflows/genie_ship_full.jsonnet

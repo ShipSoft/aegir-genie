@@ -196,11 +196,19 @@ conda package into this environment.
 Note that while this repo's environment includes the `geant4` package (the
 geometry analyzer navigates the converted Geant4 geometry), it does not set
 up the Geant4 *data* files: full workflows with `geant4_module` fail here
-with unset Geant4 data variables (`G4ENSDFSTATEDATA` etc.). Run full chains
-from an aegir environment with this repo's `build/` appended to
+with unset Geant4 data variables (`G4ENSDFSTATEDATA` etc.). Full chains
+would run from an aegir environment with this repo's `build/` appended to
 `PHLEX_PLUGIN_PATH` (and `GENIE` pointing at this environment's
 `share/genie`). Generator-only workflows (genie source +
 `sim_output_module` in `mc_only` mode) run here directly.
+
+**Known limitation:** the in-process combination of `genie_source` and
+aegir's `geant4_module` currently segfaults during aegir's geometry
+construction — Geant4 MT permits only one geometry-creating thread per
+process, and the two plugins each convert their own geometry on different
+threads (issue #11; upstream Geant4 bug #2747). Until the plugins share
+one geometry, run GENIE events through Geant4 via the two-step path:
+`gevgen_ship` → `gntpc -f rootracker` → aegir's `genie_reader_source`.
 
 ## Validating the embedded source: `gevgen_ship`
 
