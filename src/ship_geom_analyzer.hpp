@@ -103,8 +103,13 @@ class ShipGeomAnalyzer final : public genie::GeomAnalyzerI {
                                  TLorentzVector const& p, int tgtpdg) override;
 
  private:
-  struct Impl;  // geometry thread + all Geant4 state
+  struct Impl;  // all Geant4 state (used only on the geometry thread)
   std::unique_ptr<Impl> impl_;
+
+  // Both run on the geometry thread.
+  void init(std::unique_ptr<ship::IGeometryService> geometry,
+            std::string const& top_volume);
+  static void teardown_geant4(Impl& impl);
 
   genie::GFluxI* scanner_flux_ = nullptr;
   int scanner_particles_ = 10000;
