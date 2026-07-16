@@ -189,6 +189,25 @@ void collect_materials(G4LogicalVolume const* lv,
 
 }  // namespace
 
+// Runs on the geometry thread; shared by the destructor and the
+// constructor's failure path (a throw during geometry validation must not
+// leave live Geant4 state behind either).
+void ShipGeomAnalyzer::teardown_geant4(Impl& impl) {
+  impl.scanner.reset();
+  if (impl.teardown == G4Teardown::kCleanStores) {
+    // Nothing else in this process tears Geant4 down: empty the stores on
+    // the thread that owns the volumes' thread-local state, so the store
+    // singletons' at-exit destructors have nothing left to delete from
+    // the wrong thread (aegir issue #68).
+    G4GeometryManager::GetInstance()->OpenGeometry();
+    G4RegionStore::Clean();
+    G4PhysicalVolumeStore::Clean();
+    G4LogicalVolumeStore::Clean();
+    G4SolidStore::Clean();
+  }
+  impl.geometry.reset();
+}
+
 ShipGeomAnalyzer::ShipGeomAnalyzer(
     std::unique_ptr<ship::IGeometryService> geometry,
     std::string const& top_volume, G4Teardown teardown)
@@ -196,6 +215,24 @@ ShipGeomAnalyzer::ShipGeomAnalyzer(
   impl_->teardown = teardown;
 
   geometry_thread().run([&] {
+    try {
+      init(std::move(geometry), top_volume);
+    } catch (...) {
+      // geant4WorldLogical() converts before the validation that can throw;
+      // don't leave the converted volumes behind on failure.
+      teardown_geant4(*impl_);
+      throw;
+    }
+  });
+
+  path_lengths_ = genie::PathLengthList{targets_};
+  max_path_lengths_ = genie::PathLengthList{targets_};
+}
+
+// Geometry-thread half of the constructor.
+void ShipGeomAnalyzer::init(std::unique_ptr<ship::IGeometryService> geometry,
+                            std::string const& top_volume) {
+  {
     auto* world = geometry->geant4WorldLogical();
     auto* top = world;
     if (!top_volume.empty()) {
@@ -258,28 +295,11 @@ ShipGeomAnalyzer::ShipGeomAnalyzer(
       }
     }
     extents_ = Extents{min_m, max_m};
-  });
-
-  path_lengths_ = genie::PathLengthList{targets_};
-  max_path_lengths_ = genie::PathLengthList{targets_};
+  }
 }
 
 ShipGeomAnalyzer::~ShipGeomAnalyzer() {
-  geometry_thread().run([this] {
-    impl_->scanner.reset();
-    if (impl_->teardown == G4Teardown::kCleanStores) {
-      // Nothing else in this process tears Geant4 down: empty the stores on
-      // the thread that owns the volumes' thread-local state, so the store
-      // singletons' at-exit destructors have nothing left to delete from
-      // the wrong thread (aegir issue #68).
-      G4GeometryManager::GetInstance()->OpenGeometry();
-      G4RegionStore::Clean();
-      G4PhysicalVolumeStore::Clean();
-      G4LogicalVolumeStore::Clean();
-      G4SolidStore::Clean();
-    }
-    impl_->geometry.reset();
-  });
+  geometry_thread().run([this] { teardown_geant4(*impl_); });
 }
 
 genie::PathLengthList const& ShipGeomAnalyzer::ComputePathLengths(
@@ -315,19 +335,25 @@ genie::PathLengthList const& ShipGeomAnalyzer::ComputeMaxPathLengths() {
         "ComputeMaxPathLengths — the flux scan is the only supported "
         "max-path-lengths strategy");
   max_path_lengths_.SetAllToZero();
-  for (int i = 0; i < scanner_particles_; ++i) {
-    if (!scanner_flux_->GenerateNext()) continue;
-    auto const& pl = ComputePathLengths(scanner_flux_->Position(),
-                                        scanner_flux_->Momentum());
-    for (auto const& [pdg, length] : pl) {
-      double const padded = length * safety_factor_;
-      if (padded > max_path_lengths_.PathLength(pdg))
-        max_path_lengths_.SetPathLength(pdg, padded);
+  {
+    // The scan consumes flux rays; reset the exposure bookkeeping on every
+    // exit — also when a scan throws — so they never count towards the
+    // delivered POT (as ROOTGeomAnalyzer does).
+    struct ClearCycleHistory {
+      genie::GFluxI* flux;
+      ~ClearCycleHistory() { flux->Clear("CycleHistory"); }
+    } const guard{scanner_flux_};
+    for (int i = 0; i < scanner_particles_; ++i) {
+      if (!scanner_flux_->GenerateNext()) continue;
+      auto const& pl = ComputePathLengths(scanner_flux_->Position(),
+                                          scanner_flux_->Momentum());
+      for (auto const& [pdg, length] : pl) {
+        double const padded = length * safety_factor_;
+        if (padded > max_path_lengths_.PathLength(pdg))
+          max_path_lengths_.SetPathLength(pdg, padded);
+      }
     }
   }
-  // The scan consumed flux rays; reset the exposure bookkeeping so they do
-  // not count towards the delivered POT (as ROOTGeomAnalyzer does).
-  scanner_flux_->Clear("CycleHistory");
   return max_path_lengths_;
 }
 

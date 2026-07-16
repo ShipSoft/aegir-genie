@@ -21,18 +21,23 @@
 
 namespace aegir {
 
-// Resolve a GeoModel geometry db path the same way aegir's
-// geometry_geomodel_provider does: an existing path is used as-is; otherwise
-// the bare filename is looked up under $SHIPGEOMETRY_ROOT/share/geometry
-// (the flat install layout of the shipgeometry package).
+// Resolve a GeoModel geometry db path: an existing path is used as-is; a
+// bare filename is looked up under $SHIPGEOMETRY_ROOT/share/geometry (the
+// flat install layout of the shipgeometry package, as in aegir's
+// geometry_geomodel_provider). A missing path *with* directory components
+// is an error — silently substituting the central geometry for a mistyped
+// path would run the simulation on the wrong detector.
 inline std::string resolve_geometry_file(std::string const& path,
                                          std::string const& context) {
   namespace fs = std::filesystem;
   if (fs::exists(path)) return path;
-  auto resolved = fs::path(path).filename();
-  if (auto const* root = std::getenv("SHIPGEOMETRY_ROOT"))
-    resolved = fs::path(root) / "share" / "geometry" / resolved;
-  if (fs::exists(resolved)) return resolved.string();
+  auto const p = fs::path(path);
+  if (p == p.filename()) {
+    if (auto const* root = std::getenv("SHIPGEOMETRY_ROOT")) {
+      auto const resolved = fs::path(root) / "share" / "geometry" / p;
+      if (fs::exists(resolved)) return resolved.string();
+    }
+  }
   throw std::runtime_error(context + ": cannot locate geometry db '" + path +
                            "'; set SHIPGEOMETRY_ROOT or provide an absolute "
                            "path");
