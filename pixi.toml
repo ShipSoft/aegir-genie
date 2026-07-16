@@ -27,8 +27,13 @@ random123 = "*"
 libjsonnet = "*"
 # Geometry service (GeoModel-backed); the geometry analyzer navigates the
 # converted Geant4 geometry, so Geant4 is a direct dependency too.
-shipgeometryservice = "*"
+# >=0.2: G4RayScanner and the fromWorld factory.
+shipgeometryservice = ">=0.2"
 geant4 = ">=11.3"
+# Required transitively by GeoModelCore's CMake config
+# (find_dependency(Eigen3)); declared explicitly because conda-forge
+# geomodel-core does not list it as a runtime dep (as in aegir).
+eigen = "*"
 
 # C++ libraries (phlex's cmake config lacks find_dependency for these)
 libboost-devel = "*"
