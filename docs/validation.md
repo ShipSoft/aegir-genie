@@ -8,13 +8,48 @@ SPDX-License-Identifier: LGPL-3.0-or-later
 
 > **Note (geometry backend change).** This validation was performed with the
 > previous geometry path (GDML imported into TGeo via GENIE's
-> `ROOTGeomAnalyzer`). The generator now analyzes the GeoModel-built Geant4
-> geometry directly (`ShipGeomAnalyzer`); the target-nucleus derivation
-> (averaged-A ion per element) is unchanged, but the validation should be
-> repeated on the GeoModel geometry — including an old-vs-new comparison on
-> the *same* detector description (export the GeoModel geometry to GDML with
-> aegir's `export_gdml` and run it through an old build). Max-path-lengths
-> caches produced for the GDML geometry are invalid and must be regenerated.
+> `ROOTGeomAnalyzer`, on the FairShip/TGeo-exported production GDML). The
+> generator now analyzes the GeoModel-built Geant4 geometry directly
+> (`ShipGeomAnalyzer`); the target-nucleus derivation (averaged-A ion per
+> element) is unchanged. Max-path-lengths caches produced for the GDML
+> geometry are invalid and must be regenerated, and the statistical battery
+> below should be repeated on the GeoModel geometry once production inputs
+> exist. See the next section for the analyzer-level validation of the new
+> path.
+
+## Geometry-analyzer validation (GeoModel path)
+
+The new analyzer was validated against `ROOTGeomAnalyzer` on the *same*
+detector description: the GeoModel geometry (`build_geometry` output)
+exported to GDML with `G4GDMLParser` and fed to an old (pre-change) build,
+both computing flux-scanned max path lengths from an identical synthetic
+flux. Two findings:
+
+1. **The GDML round trip is silently broken for the GeoModel geometry** —
+   and is itself the strongest argument for the direct path. TGeo's GDML
+   importer strips the exporter's `0x…` pointer suffixes; every element
+   whose bare name then collides with a *material* name (Iron, Copper,
+   Tungsten, Tantalum, Silicon, Lead — the pure metals are named after
+   their element) fails to resolve and is dropped. Those materials import
+   with **empty element lists** and Inconel718 loses its Fe fraction, so
+   `ROOTGeomAnalyzer` saw 15 targets instead of 20: **no W/Ta (proton
+   target), no Fe (muon shield), no Pb, no Cu** — and inflated alloy
+   component weights from renormalisation over the surviving fractions.
+
+2. **Where the old path is intact, the two analyzers agree exactly.** For
+   every target living only in cleanly-imported materials (He-4, N-14,
+   O-16, Al-27, Si-28, Ar-40, Ca-40) the independently computed max path
+   lengths agree to all printed digits; every discrepant target traces to
+   a material demonstrably mangled by the GDML import. The unit test
+   battery (`tests/geom_analyzer_test.cpp`) additionally checks the
+   machinery against analytic values on a known geometry.
+
+End-to-end, the new path generates events on the production GeoModel
+geometry with the production splines (tune `G18_02a_02_11b`; all 20
+targets covered): a 2000-event `gevgen_ship` run completes with working
+POT accounting and a physically sensible vertex-z distribution (muon
+shield and downstream detectors populated, the low-density decay volume
+nearly empty).
 
 The embedded generation path was validated against GENIE's own
 `gevgen_fnal` application — the tool the FairShip neutrino workflow
