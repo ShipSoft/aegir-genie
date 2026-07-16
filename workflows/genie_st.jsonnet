@@ -4,6 +4,12 @@
 
 // genie_st.jsonnet — GENIE neutrino interactions, single-threaded chain.
 //
+// KNOWN LIMITATION (issue #11): this in-process combination of genie_source
+// and geant4_module currently segfaults during aegir's geometry construction
+// (Geant4 MT allows only one geometry-creating thread per process; upstream
+// Geant4 bug #2747). Use the two-step path meanwhile: gevgen_ship ->
+// gntpc -f rootracker -> aegir's genie_reader_source.
+//
 // Illustrative workflow: the genie source block below is what this repo
 // provides; the geometry / geant4 / output blocks are aegir plugins (the
 // config blocks are inlined here so this file stands alone — with aegir's
