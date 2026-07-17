@@ -18,8 +18,9 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # Dependencies (from the default pixi environment)
 find_package(SHiPDataModel REQUIRED)
 # Geometry service (GeoModel-backed, brings Geant4 via its public interface).
-# 0.2: G4RayScanner and the fromWorld factory.
-find_package(SHiPGeometryService 0.2 CONFIG REQUIRED)
+# 0.3: ship::geometry_thread() and SHiPGeometryService::sharedFromFile, both
+# shared with aegir's geant4_module in the full in-process chain (issue #11).
+find_package(SHiPGeometryService 0.3 CONFIG REQUIRED)
 
 # Phlex's cmake config does not call find_dependency for its transitive deps
 # (still true as of phlex 0.3.0: its generated deps block is empty), so declare

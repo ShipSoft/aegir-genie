@@ -14,7 +14,8 @@
 // Deliberately does not involve GMCJDriver, so it runs without
 // cross-section splines; only the PDG library ($GENIE) is needed.
 //
-// Analyzers are created strictly sequentially, each with kCleanStores: the
+// Analyzers are created strictly sequentially, each with kCleanStores (the
+// final second-user test emulates the process-owned cleanup instead): the
 // Geant4 stores are emptied (on the shared process-wide geometry thread)
 // before the next geometry is converted, so duplicate volume names never
 // coexist.
@@ -28,6 +29,13 @@
 #include <GeoModelKernel/Units.h>
 #include <TLorentzVector.h>
 
+#include <G4GeometryManager.hh>
+#include <G4LogicalVolumeStore.hh>
+#include <G4PVPlacement.hh>
+#include <G4PhysicalVolumeStore.hh>
+#include <G4Region.hh>
+#include <G4RegionStore.hh>
+#include <G4SolidStore.hh>
 #include <algorithm>
 #include <cmath>
 #include <cstdio>
@@ -41,6 +49,7 @@
 #include "Framework/EventGen/PathLengthList.h"
 #include "Framework/Numerical/RandomGen.h"
 #include "Framework/ParticleData/PDGCodeList.h"
+#include "GeometryService/GeometryThread.h"
 #include "GeometryService/SHiPGeometryService.h"
 #include "ship_geom_analyzer.hpp"
 
@@ -124,7 +133,9 @@ PVConstLink build_world(std::string const& suffix) {
 }
 
 std::unique_ptr<aegir::ShipGeomAnalyzer> make_analyzer(
-    std::string const& suffix, std::string const& top_volume = {}) {
+    std::string const& suffix, std::string const& top_volume = {},
+    aegir::ShipGeomAnalyzer::G4Teardown teardown =
+        aegir::ShipGeomAnalyzer::G4Teardown::kCleanStores) {
   // Keep every GeoModel tree alive for the whole process: GeoModel2G4
   // caches conversions in static maps keyed by GeoModel pointers, and a
   // freed tree whose addresses get reused would alias a later conversion
@@ -134,7 +145,7 @@ std::unique_ptr<aegir::ShipGeomAnalyzer> make_analyzer(
   keep_alive.push_back(world);
   return std::make_unique<aegir::ShipGeomAnalyzer>(
       ship::SHiPGeometryService::fromWorld(std::move(world)), top_volume,
-      aegir::ShipGeomAnalyzer::G4Teardown::kCleanStores);
+      teardown);
 }
 
 // A ray in the flux frame: SI meters (position) and GeV (momentum), like
@@ -343,6 +354,54 @@ void test_thread_migration() {
   check_close(first, kIronPl, "and it is the analytic value");
 }
 
+void test_second_geant4_user() {
+  std::cout << "second Geant4 user (geant4_module-style master init):\n";
+  // In the full in-process chain, aegir's geant4_module initialises its run
+  // manager on ship::geometry_thread() after the analyzer has converted the
+  // shared geometry (issue #11). Emulate that master init — reopen, place a
+  // world, create a region, close (voxelise) the full geometry — and check
+  // the analyzer still scans correctly afterwards.
+  auto analyzer = make_analyzer(
+      "G", {}, aegir::ShipGeomAnalyzer::G4Teardown::kLeaveToProcess);
+  double const before =
+      analyzer->ComputePathLengths(ray_position(-1.5), ray_momentum())
+          .PathLength(kIronPdg);
+
+  ship::geometry_thread().run([] {
+    auto* world_lv =
+        G4LogicalVolumeStore::GetInstance()->GetVolume("TestWorldG", false);
+    check(world_lv != nullptr, "converted world found in the store");
+    G4GeometryManager::GetInstance()->OpenGeometry();
+    new G4PVPlacement(nullptr, {}, world_lv, world_lv->GetName(), nullptr,
+                      false, 0);
+    auto* region = new G4Region("TestWorldRegionG");
+    region->AddRootLogicalVolume(world_lv);
+    G4GeometryManager::GetInstance()->CloseGeometry(true, false);
+  });
+
+  // From a different thread, as phlex would call the serial source.
+  double after = 0.;
+  std::thread{[&] {
+    after = analyzer->ComputePathLengths(ray_position(-1.5), ray_momentum())
+                .PathLength(kIronPdg);
+  }}.join();
+  check_close(before, after, "same answer after the run-manager-style close");
+  check_close(after, kIronPl, "and it is the analytic value");
+
+  // kLeaveToProcess: the process owns the store cleanup — emulate
+  // geant4_module's teardown on the geometry thread once the analyzer is
+  // gone (the store singletons' at-exit destructors must find them empty,
+  // aegir issue #68).
+  analyzer.reset();
+  ship::geometry_thread().run([] {
+    G4GeometryManager::GetInstance()->OpenGeometry();
+    G4RegionStore::Clean();
+    G4PhysicalVolumeStore::Clean();
+    G4LogicalVolumeStore::Clean();
+    G4SolidStore::Clean();
+  });
+}
+
 }  // namespace
 
 int main() {
@@ -350,6 +409,7 @@ int main() {
   test_max_path_lengths();
   test_top_volume();
   test_thread_migration();
+  test_second_geant4_user();
 
   if (failures) {
     std::cout << failures << " check(s) FAILED\n";
