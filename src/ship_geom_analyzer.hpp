@@ -20,12 +20,13 @@
 //     scan rays do not count as delivered POT.
 //
 // All Geant4 work (GeoModel->G4 conversion, navigation, teardown) is
-// confined to one process-wide geometry thread shared by all analyzers: the
-// conda Geant4 is an MT build, whose logical/physical volumes keep
-// per-thread state usable only on the creating thread — and only a single
-// thread per process may create geometry at all (see geometry_thread() in
-// the implementation) — while phlex may run even a serial source on
-// changing TBB threads.
+// confined to the process-wide ship::geometry_thread(), shared by every
+// Geant4 geometry user in the process (all analyzers, and aegir's
+// geant4_module in the full chain — issue #11): the conda Geant4 is an MT
+// build, whose logical/physical volumes keep per-thread state usable only
+// on the creating thread — and only a single thread per process may create
+// geometry at all — while phlex may run even a serial source on changing
+// TBB threads.
 
 #pragma once
 
@@ -64,11 +65,12 @@ class ShipGeomAnalyzer final : public genie::GeomAnalyzerI {
   // volume becomes the scan world; it must exist and be placed exactly once,
   // and flux-frame coordinates are mapped through its placement transform.
   // Must be constructed after the GENIE tune (PDGLibrary) is initialized.
-  // Takes ownership of the service and keeps it (and with it the GeoModel
-  // tree) alive for the analyzer's lifetime — GeoModel2G4 caches conversions
-  // in static maps keyed by GeoModel pointers, so freeing the tree early
-  // would poison any later conversion in the same process.
-  ShipGeomAnalyzer(std::unique_ptr<ship::IGeometryService> geometry,
+  // Shares ownership of the service (SHiPGeometryService::sharedFromFile
+  // hands the same instance to every user of the same file) and holds its
+  // reference for the analyzer's lifetime — GeoModel2G4 caches conversions
+  // in static maps keyed by GeoModel pointers, so the tree must not be
+  // freed while a later conversion in the same process is possible.
+  ShipGeomAnalyzer(std::shared_ptr<ship::IGeometryService> geometry,
                    std::string const& top_volume, G4Teardown teardown);
   ~ShipGeomAnalyzer() override;
 
@@ -107,7 +109,7 @@ class ShipGeomAnalyzer final : public genie::GeomAnalyzerI {
   std::unique_ptr<Impl> impl_;
 
   // Both run on the geometry thread.
-  void init(std::unique_ptr<ship::IGeometryService> geometry,
+  void init(std::shared_ptr<ship::IGeometryService> geometry,
             std::string const& top_volume);
   static void teardown_geant4(Impl& impl);
 

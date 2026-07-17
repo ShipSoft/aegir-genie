@@ -51,7 +51,7 @@ plugin.
 | Piece | State |
 |---|---|
 | `pixi install` | works |
-| `genie_source` plugin | full chain (GENIE → Geant4 → output) validated on the production SHiP geometry |
+| `genie_source` plugin | full chain (GENIE → Geant4 → output) validated on the production SHiP geometry; runs in one process — the geometry is shared with `geant4_module` and converted once (issue #11) |
 | `gevgen_ship` app | validated against `gevgen_fnal` on identical inputs — see [docs/validation.md](docs/validation.md) |
 | `ShipFluxDriver` (flux-file reading, unit conversions, exposure accounting) | works, unit-tested (`pixi run test`) |
 | event generation (`GMCJDriver::GenerateEvent`) | works; embedded and `gevgen_ship` paths verified content-identical (incl. full geometry) |

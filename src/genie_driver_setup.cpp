@@ -113,9 +113,11 @@ GenieDriverBundle make_genie_driver(GenieSourceConfig const& cfg,
 
   // 5. Geometry: the same GeoModel db the Geant4 side tracks through,
   //    converted to Geant4 and analyzed directly (ShipGeomAnalyzer works in
-  //    SI, no unit configuration needed).
+  //    SI, no unit configuration needed). sharedFromFile hands aegir's
+  //    geometry provider the same instance in the full in-process chain, so
+  //    the geometry is loaded and converted exactly once (issue #11).
   bundle.geom = std::make_unique<ShipGeomAnalyzer>(
-      ship::SHiPGeometryService::fromFile(
+      ship::SHiPGeometryService::sharedFromFile(
           resolve_geometry_file(cfg.geometry_file, context)),
       cfg.top_volume, teardown);
 

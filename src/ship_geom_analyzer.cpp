@@ -20,14 +20,9 @@
 #include <G4VPhysicalVolume.hh>
 #include <G4VSolid.hh>
 #include <cmath>
-#include <condition_variable>
-#include <functional>
-#include <future>
 #include <map>
-#include <mutex>
 #include <set>
 #include <stdexcept>
-#include <thread>
 #include <utility>
 #include <vector>
 
@@ -35,79 +30,17 @@
 #include "Framework/Numerical/RandomGen.h"
 #include "Framework/ParticleData/PDGUtils.h"
 #include "GeometryService/G4RayScanner.h"
+#include "GeometryService/GeometryThread.h"
 #include "GeometryService/IGeometryService.h"
 
 namespace aegir {
 
 namespace {
 
-// Runs posted tasks on one dedicated thread until destroyed. Geant4 MT
-// split-class state (logical/physical volumes, solids) is only valid on the
-// thread that created it, so every touch of the converted geometry is
-// funnelled through here. Callers block until their task finishes;
-// exceptions propagate. Not itself thread-safe: GENIE drives the analyzer
-// from one thread at a time.
-class GeometryThread {
- public:
-  GeometryThread() : thread_{[this] { loop(); }} {}
-
-  ~GeometryThread() {
-    {
-      std::lock_guard lk{mutex_};
-      stop_ = true;
-    }
-    cv_.notify_one();
-    thread_.join();
-  }
-
-  template <typename F>
-  std::invoke_result_t<F&> run(F&& f) {
-    using R = std::invoke_result_t<F&>;
-    std::packaged_task<R()> task{std::forward<F>(f)};
-    auto result = task.get_future();
-    {
-      std::lock_guard lk{mutex_};
-      task_ = [&task] { task(); };
-    }
-    cv_.notify_one();
-    return result.get();
-  }
-
- private:
-  void loop() {
-    std::unique_lock lk{mutex_};
-    while (true) {
-      cv_.wait(lk, [this] { return stop_ || task_; });
-      if (task_) {
-        auto task = std::move(task_);
-        task_ = nullptr;
-        lk.unlock();
-        task();
-        lk.lock();
-      } else if (stop_) {
-        return;
-      }
-    }
-  }
-
-  std::mutex mutex_;
-  std::condition_variable cv_;
-  std::function<void()> task_;
-  bool stop_ = false;
-  std::thread thread_;  // last: starts using the members above
-};
-
-// One geometry thread per process, shared by all analyzers and never torn
-// down (a parked thread at exit is harmless). Geant4 MT allows only a
-// single geometry-*creating* thread per process: G4GeomSplitter's slot
-// count is shared across threads while the data array is thread-local, so
-// a second creating thread writes through its still-null array pointer the
-// moment the first thread has grown the shared count (verified with the
-// conda Geant4 11.3 build).
-GeometryThread& geometry_thread() {
-  static GeometryThread thread;
-  return thread;
-}
+// The process-wide Geant4 geometry thread (shared with every other Geant4
+// geometry user, e.g. aegir's geant4_module in the full chain — issue #11):
+// only a single thread per process may create Geant4 geometry.
+using ship::geometry_thread;
 
 // One target nucleus per element, averaged-A — exactly what ROOTGeomAnalyzer
 // derives from a TGeo mixture element, so the genie-splines-ship target list
@@ -126,13 +59,14 @@ struct ShipGeomAnalyzer::Impl {
   using TargetWeights = std::vector<std::pair<int, double>>;
 
   G4Teardown teardown;
-  // Kept alive for the analyzer's lifetime even though only the converted
-  // Geant4 geometry is used: GeoModel2G4's Geo2G4LVFactory caches converted
-  // volumes in function-static maps keyed by GeoModel *pointers*, so freeing
-  // the GeoModel tree lets a later conversion in the same process (e.g.
-  // aegir's geometry provider in the full phlex chain) hit stale cache
-  // entries when allocations reuse the freed addresses.
-  std::unique_ptr<ship::IGeometryService> geometry;
+  // Shared with any other user of the same geometry file (aegir's geometry
+  // provider in the full phlex chain gets the same instance via
+  // SHiPGeometryService::sharedFromFile) and held for the analyzer's
+  // lifetime: GeoModel2G4's Geo2G4LVFactory caches converted volumes in
+  // function-static maps keyed by GeoModel *pointers*, so freeing the
+  // GeoModel tree lets a later conversion in the same process hit stale
+  // cache entries when allocations reuse the freed addresses.
+  std::shared_ptr<ship::IGeometryService> geometry;
   std::unique_ptr<ship::G4RayScanner> scanner;
   std::map<G4Material const*, TargetWeights> weights;
 
@@ -209,7 +143,7 @@ void ShipGeomAnalyzer::teardown_geant4(Impl& impl) {
 }
 
 ShipGeomAnalyzer::ShipGeomAnalyzer(
-    std::unique_ptr<ship::IGeometryService> geometry,
+    std::shared_ptr<ship::IGeometryService> geometry,
     std::string const& top_volume, G4Teardown teardown)
     : impl_{std::make_unique<Impl>()} {
   impl_->teardown = teardown;
@@ -230,7 +164,7 @@ ShipGeomAnalyzer::ShipGeomAnalyzer(
 }
 
 // Geometry-thread half of the constructor.
-void ShipGeomAnalyzer::init(std::unique_ptr<ship::IGeometryService> geometry,
+void ShipGeomAnalyzer::init(std::shared_ptr<ship::IGeometryService> geometry,
                             std::string const& top_volume) {
   {
     auto* world = geometry->geant4WorldLogical();

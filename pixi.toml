@@ -7,6 +7,9 @@ name = "aegir-genie"
 description = "GENIE neutrino event generation plugin for the aegir simulation framework"
 channels = ["https://prefix.dev/ship", "conda-forge"]
 platforms = ["linux-64"]
+# Enables source dependencies for the (opt-in) multi-package dev workflow
+# below; inert for the default environment.
+preview = ["pixi-build"]
 requires-pixi = ">=0.68"
 
 [dependencies]
