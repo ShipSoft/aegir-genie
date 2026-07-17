@@ -30,8 +30,11 @@ random123 = "*"
 libjsonnet = "*"
 # Geometry service (GeoModel-backed); the geometry analyzer navigates the
 # converted Geant4 geometry, so Geant4 is a direct dependency too.
-# >=0.2: G4RayScanner and the fromWorld factory.
-shipgeometryservice = ">=0.2"
+# >=0.3: ship::geometry_thread() and sharedFromFile, shared with aegir's
+# geant4_module (issue #11). Keep in lockstep with aegir's pin — the
+# unversioned soname means ld.so dedups the library process-wide and the
+# first-loaded copy wins.
+shipgeometryservice = ">=0.3"
 geant4 = ">=11.3"
 # Required transitively by GeoModelCore's CMake config
 # (find_dependency(Eigen3)); declared explicitly because conda-forge
