@@ -44,7 +44,7 @@ inline std::string resolve_geometry_file(std::string const& path,
 }
 
 struct GenieSourceConfig {
-  std::string tune = "G18_02a_00_000";
+  std::string tune = "G18_02a_02_11b";
   std::string spline_file;  // GENIE cross-section splines (gmkspl XML output)
   std::string flux_file;    // neutrino flux file (format per flux_format)
   // 'ship': SHiP flux ntuple, schema v1 (ShipFluxDriver);

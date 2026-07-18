@@ -163,7 +163,7 @@ class GenieSource : public phlex::source {
 
 PHLEX_REGISTER_SOURCE(s, config) {
   aegir::GenieSourceConfig cfg;
-  cfg.tune = config.get<std::string>("tune", std::string{"G18_02a_00_000"});
+  cfg.tune = config.get<std::string>("tune", std::string{"G18_02a_02_11b"});
   cfg.spline_file = config.get<std::string>("splines");
   cfg.flux_file = config.get<std::string>("flux_file");
   cfg.flux_format = config.get<std::string>("flux_format", std::string{"ship"});

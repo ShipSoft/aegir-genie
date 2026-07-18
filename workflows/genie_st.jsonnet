@@ -37,7 +37,7 @@
     genie: {
       cpp: 'genie_source',
       // GENIE comprehensive model tune; must match the splines exactly.
-      tune: 'G18_02a_00_000',
+      tune: 'G18_02a_02_11b',
       splines: 'gxspl-ship.xml',
       flux_file: 'nu_flux.root',
       // 'ship' (schema-v1 ntuple) or 'gsimple' (GENIE GSimple flux, the
