@@ -67,7 +67,7 @@ Options:
                             verbatim; anything else is a filename prefix
                             (NAME.RUN.ghep.root)   [default: gevgen_ship]
   -t, --tune TUNE           GENIE tune; must match the splines
-                            [default: G18_02a_00_000]
+                            [default: G18_02a_02_11b]
   -v, --top-volume NAME     restrict GENIE to this logical volume
                             [default: the entire world]
   -s, --seed SEED           base seed; each event derives its own via Philox
