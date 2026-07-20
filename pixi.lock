@@ -371,7 +371,7 @@ environments:
       - conda: https://prefix.dev/ship/linux-64/rootegpythia6-0.1-h0566472_9.conda
       - conda: https://prefix.dev/ship/linux-64/shipdatamodel-0.1.0-h0566472_1.conda
       - conda: https://prefix.dev/ship/linux-64/shipgeometry-0.2.1-hb0f4dca_1.conda
-      - conda: https://prefix.dev/ship/linux-64/shipgeometryservice-0.2.0-hb0f4dca_0.conda
+      - conda: https://prefix.dev/ship/linux-64/shipgeometryservice-0.3.0-hb0f4dca_0.conda
       - conda: https://prefix.dev/ship/noarch/genie-data-3.06.02-h4616a5c_0.conda
       - conda: https://prefix.dev/ship/noarch/genie-splines-ship-3.06.02-production_4616a5c_100.conda
       - conda: https://prefix.dev/ship/noarch/random123-1.14.0-h4616a5c_1.conda
@@ -764,7 +764,7 @@ environments:
       - conda: https://prefix.dev/ship/linux-64/rootegpythia6-0.1-h0566472_9.conda
       - conda: https://prefix.dev/ship/linux-64/shipdatamodel-0.1.0-h0566472_1.conda
       - conda: https://prefix.dev/ship/linux-64/shipgeometry-0.2.1-hb0f4dca_1.conda
-      - conda: https://prefix.dev/ship/linux-64/shipgeometryservice-0.2.0-hb0f4dca_0.conda
+      - conda: https://prefix.dev/ship/linux-64/shipgeometryservice-0.3.0-hb0f4dca_0.conda
       - conda: https://prefix.dev/ship/noarch/genie-data-3.06.02-h4616a5c_0.conda
       - conda: https://prefix.dev/ship/noarch/genie-splines-ship-3.06.02-production_4616a5c_100.conda
       - conda: https://prefix.dev/ship/noarch/random123-1.14.0-h4616a5c_1.conda
@@ -7291,25 +7291,25 @@ packages:
     - shipgeometry >=0.2.1,<0.3.0a0
   size: 366710
   timestamp: 1782460390870
-- conda: https://prefix.dev/ship/linux-64/shipgeometryservice-0.2.0-hb0f4dca_0.conda
-  sha256: b40d5bce7ab7cd8bb0c13aa6748456a16a7d2be513dd8b072f942ca221b2fa8c
-  md5: df43fe9274e311fc5fbd3f6a27335933
+- conda: https://prefix.dev/ship/linux-64/shipgeometryservice-0.3.0-hb0f4dca_0.conda
+  sha256: c5a9c01f63a8590c18c2e64bec1151d3aa2e8d745071d159d333da8fd7085bc8
+  md5: cc4de979bf697311c4aa6f4871c303a8
   depends:
   - __glibc >=2.17,<3.0.a0
   - libstdcxx >=15
   - libgcc >=15
-  - eigen-abi >=5.0.1.80,<5.0.1.81.0a0
-  - geant4 >=11.4.2,<11.4.3.0a0
   - geomodel-core >=6.27.0,<6.28.0a0
-  - mp-units >=2.5.0,<2.6.0a0
-  - shipgeometry >=0.2.1,<0.3.0a0
   - geomodel-g4 >=6.27.0,<6.28.0a0
+  - mp-units >=2.5.0,<2.6.0a0
+  - geant4 >=11.4.2,<11.4.3.0a0
+  - shipgeometry >=0.2.1,<0.3.0a0
+  - eigen-abi >=5.0.1.80,<5.0.1.81.0a0
   license: LGPL-3.0-or-later
   run_exports:
     weak:
-    - shipgeometryservice >=0.2.0,<0.3.0a0
-  size: 45043
-  timestamp: 1784194552053
+    - shipgeometryservice >=0.3.0,<0.4.0a0
+  size: 54541
+  timestamp: 1784537686495
 - conda: https://prefix.dev/ship/noarch/genie-data-3.06.02-h4616a5c_0.conda
   sha256: 3420dad73db3c74d6a1ddda9fcdc6c3a1958ec97874818ba0d924fa4fdc0ec74
   md5: 98a97c57f8ff1b2f6bd6fea7809e0598
