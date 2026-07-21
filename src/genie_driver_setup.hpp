@@ -73,6 +73,14 @@ GenieDriverBundle make_genie_driver(
     ShipGeomAnalyzer::G4Teardown teardown =
         ShipGeomAnalyzer::G4Teardown::kLeaveToProcess);
 
+// The tune name recorded in a gmkspl spline XML's <genie_tune name="...">
+// header, or an empty string when none is found (also for gzip-compressed
+// files, which are not sniffed). make_genie_driver refuses a spline file
+// whose recorded tune differs from the configured one: GENIE would find no
+// usable splines and silently fall back to computing every cross section
+// numerically — hours to days at 100% CPU before the first event.
+std::string spline_file_tune(std::string const& path);
+
 // Reseed every RNG stream GENIE draws from for one event — GENIE's
 // RandomGen (TRandom3), ROOT's global gRandom, and Pythia6's internal
 // RANMAR generator — with Philox-derived seeds from (base seed, event

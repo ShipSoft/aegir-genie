@@ -11,8 +11,10 @@
 #include <cstdio>
 #include <cstdlib>
 #include <filesystem>
+#include <fstream>
 #include <functional>
 #include <stdexcept>
+#include <string_view>
 #include <thread>
 
 #include "Framework/EventGen/EventRecord.h"
@@ -85,6 +87,32 @@ genie::flux::GFluxExposureI* GenieDriverBundle::exposure() const {
   return dynamic_cast<genie::flux::GFluxExposureI*>(flux.get());
 }
 
+std::string spline_file_tune(std::string const& path) {
+  std::ifstream in{path, std::ios::binary};
+  if (!in) return {};
+
+  // gzip-compressed spline files (magic 1f 8b) are not sniffed.
+  char magic[2] = {};
+  in.read(magic, 2);
+  if (in.gcount() == 2 && magic[0] == '\x1f' && magic[1] == '\x8b') return {};
+  in.seekg(0);
+
+  // The header sits within the first handful of lines; scan a bounded
+  // window so a multi-hundred-MB spline file is never read whole.
+  constexpr int kHeaderLines = 100;
+  constexpr std::string_view kTag = "<genie_tune name=\"";
+  std::string line;
+  for (int i = 0; i < kHeaderLines && std::getline(in, line); ++i) {
+    auto const pos = line.find(kTag);
+    if (pos == std::string::npos) continue;
+    auto const start = pos + kTag.size();
+    auto const end = line.find('"', start);
+    if (end == std::string::npos) return {};
+    return line.substr(start, end - start);
+  }
+  return {};
+}
+
 GenieDriverBundle make_genie_driver(GenieSourceConfig const& cfg,
                                     std::string const& context,
                                     ShipGeomAnalyzer::G4Teardown teardown) {
@@ -106,7 +134,20 @@ GenieDriverBundle make_genie_driver(GenieSourceConfig const& cfg,
   genie::utils::app_init::RandGen(cfg.seed);
 
   // 4. Cross-section splines. XSecTable exit()s the process when the file
-  //    is unusable, so cfg.validate() checked its existence up front.
+  //    is unusable, so cfg.validate() checked its existence up front. A
+  //    tune mismatch, however, is silent: GENIE finds no usable splines for
+  //    the tune's algorithms and recomputes every cross section numerically
+  //    — hours to days at 100% CPU before the first event. Refuse it here.
+  if (auto const file_tune = spline_file_tune(cfg.spline_file);
+      !file_tune.empty() && file_tune != cfg.tune)
+    throw std::runtime_error(
+        context + ": spline file '" + cfg.spline_file +
+        "' was generated for tune '" + file_tune +
+        "' but the configured tune is '" + cfg.tune +
+        "' — GENIE would silently recompute all cross sections numerically "
+        "(days of CPU). Use matching splines, or set tune '" +
+        file_tune +
+        "' (the packaged genie-splines-ship is G18_02a_02_11b only)");
   genie::utils::app_init::XSecTable(cfg.spline_file, true);
 
   GenieDriverBundle bundle;
