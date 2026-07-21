@@ -225,6 +225,11 @@ target_link_libraries(flux_driver_test PRIVATE aegir_genie_core)
 add_executable(geom_analyzer_test tests/geom_analyzer_test.cpp)
 target_link_libraries(geom_analyzer_test PRIVATE aegir_genie_core)
 
+# Standalone spline-tune sniffing test: pure file parsing, no GENIE
+# initialization.
+add_executable(spline_tune_test tests/spline_tune_test.cpp)
+target_link_libraries(spline_tune_test PRIVATE aegir_genie_core)
+
 # Install
 include(GNUInstallDirs)
 install(TARGETS genie_source LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
@@ -240,3 +245,4 @@ add_test(
         ${CMAKE_CURRENT_BINARY_DIR}/flux_driver_test_synthetic.root
 )
 add_test(NAME geom_analyzer COMMAND geom_analyzer_test)
+add_test(NAME spline_tune COMMAND spline_tune_test)
