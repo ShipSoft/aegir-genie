@@ -40,6 +40,7 @@
 #include <TTree.h>
 
 #include <cstdio>
+#include <map>
 #include <numeric>
 #include <vector>
 
@@ -108,9 +109,8 @@ void shuffle_gsimple(const char* in, const char* out, unsigned seed = 12345) {
     if (i % 10000000 == 0) printf("  wrote %lld / %lld\n", i, n);
   }
   oflux->Write();
-  fin.cd();
+  fout.cd();  // clone the meta tree directly into the output file
   TTree* ometa = meta->CloneTree(-1);
-  fout.cd();
   ometa->Write();
   fout.Close();
 
