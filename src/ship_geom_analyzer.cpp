@@ -72,7 +72,8 @@ struct ShipGeomAnalyzer::Impl {
 
   // Placement of the scan volume in the master (flux) frame:
   // p_master = rotation * p_top + translation.
-  G4RotationMatrix rotation;  // identity when scanning the full world
+  G4RotationMatrix rotation;          // identity when scanning the full world
+  G4RotationMatrix inverse_rotation;  // cached rotation.inverse()
   G4ThreeVector translation{0., 0., 0.};
 
   // Last scanned ray, reused by GenerateVertex (GMCJDriver calls it right
@@ -84,7 +85,7 @@ struct ShipGeomAnalyzer::Impl {
   G4ThreeVector scan_direction;  // unit vector, top frame
 
   G4ThreeVector master_to_top(G4ThreeVector const& p) const {
-    return rotation.inverse() * (p - translation);
+    return inverse_rotation * (p - translation);
   }
   G4ThreeVector top_to_master(G4ThreeVector const& p) const {
     return rotation * p + translation;
@@ -166,70 +167,68 @@ ShipGeomAnalyzer::ShipGeomAnalyzer(
 // Geometry-thread half of the constructor.
 void ShipGeomAnalyzer::init(std::shared_ptr<ship::IGeometryService> geometry,
                             std::string const& top_volume) {
-  {
-    auto* world = geometry->geant4WorldLogical();
-    auto* top = world;
-    if (!top_volume.empty()) {
-      top = geometry->getLogicalVolume(top_volume);
-      if (!top)
+  auto* world = geometry->geant4WorldLogical();
+  auto* top = world;
+  if (!top_volume.empty()) {
+    top = geometry->getLogicalVolume(top_volume);
+    if (!top)
+      throw std::runtime_error("ShipGeomAnalyzer: top_volume '" + top_volume +
+                               "' not found in the converted Geant4 geometry");
+    if (top != world) {
+      std::vector<std::pair<G4RotationMatrix, G4ThreeVector>> placements;
+      find_placements(world, top, G4RotationMatrix{}, G4ThreeVector{},
+                      placements);
+      if (placements.empty())
+        throw std::runtime_error("ShipGeomAnalyzer: top_volume '" + top_volume +
+                                 "' is not placed in the world");
+      if (placements.size() > 1)
         throw std::runtime_error(
-            "ShipGeomAnalyzer: top_volume '" + top_volume +
-            "' not found in the converted Geant4 geometry");
-      if (top != world) {
-        std::vector<std::pair<G4RotationMatrix, G4ThreeVector>> placements;
-        find_placements(world, top, G4RotationMatrix{}, G4ThreeVector{},
-                        placements);
-        if (placements.empty())
-          throw std::runtime_error("ShipGeomAnalyzer: top_volume '" +
-                                   top_volume + "' is not placed in the world");
-        if (placements.size() > 1)
-          throw std::runtime_error(
-              "ShipGeomAnalyzer: top_volume '" + top_volume + "' is placed " +
-              std::to_string(placements.size()) +
-              " times — the flux-frame mapping would be ambiguous");
-        impl_->rotation = placements.front().first;
-        impl_->translation = placements.front().second;
-      }
+            "ShipGeomAnalyzer: top_volume '" + top_volume + "' is placed " +
+            std::to_string(placements.size()) +
+            " times — the flux-frame mapping would be ambiguous");
+      impl_->rotation = placements.front().first;
+      impl_->inverse_rotation = impl_->rotation.inverse();
+      impl_->translation = placements.front().second;
     }
-    impl_->geometry = std::move(geometry);  // see Impl::geometry
-    impl_->scanner = std::make_unique<ship::G4RayScanner>(top);
-
-    // Material -> per-target SI weights, and the target-nucleus list.
-    std::set<G4Material const*> materials;
-    collect_materials(top, materials);
-    std::set<int> target_set;
-    for (auto const* material : materials) {
-      double const density =
-          material->GetDensity() / (CLHEP::kg / CLHEP::m3);  // -> kg/m3
-      auto const& elements = *material->GetElementVector();
-      auto const* fractions = material->GetFractionVector();  // mass fractions
-      Impl::TargetWeights material_weights;
-      for (std::size_t i = 0; i < elements.size(); ++i) {
-        int const pdg = target_pdg(*elements[i]);
-        material_weights.emplace_back(pdg, density * fractions[i]);
-        target_set.insert(pdg);
-      }
-      impl_->weights.emplace(material, std::move(material_weights));
-    }
-    for (int pdg : target_set) targets_.push_back(pdg);
-
-    // Scan-volume bounding box, mapped to the master frame.
-    G4ThreeVector lo, hi;
-    top->GetSolid()->BoundingLimits(lo, hi);
-    TVector3 min_m{INFINITY, INFINITY, INFINITY};
-    TVector3 max_m{-INFINITY, -INFINITY, -INFINITY};
-    for (int corner = 0; corner < 8; ++corner) {
-      G4ThreeVector const local{corner & 1 ? hi.x() : lo.x(),
-                                corner & 2 ? hi.y() : lo.y(),
-                                corner & 4 ? hi.z() : lo.z()};
-      auto const master = impl_->top_to_master(local) / 1e3;  // mm -> m
-      for (int axis = 0; axis < 3; ++axis) {
-        min_m[axis] = std::min(min_m[axis], master[axis]);
-        max_m[axis] = std::max(max_m[axis], master[axis]);
-      }
-    }
-    extents_ = Extents{min_m, max_m};
   }
+  impl_->geometry = std::move(geometry);  // see Impl::geometry
+  impl_->scanner = std::make_unique<ship::G4RayScanner>(top);
+
+  // Material -> per-target SI weights, and the target-nucleus list.
+  std::set<G4Material const*> materials;
+  collect_materials(top, materials);
+  std::set<int> target_set;
+  for (auto const* material : materials) {
+    double const density =
+        material->GetDensity() / (CLHEP::kg / CLHEP::m3);  // -> kg/m3
+    auto const& elements = *material->GetElementVector();
+    auto const* fractions = material->GetFractionVector();  // mass fractions
+    Impl::TargetWeights material_weights;
+    for (std::size_t i = 0; i < elements.size(); ++i) {
+      int const pdg = target_pdg(*elements[i]);
+      material_weights.emplace_back(pdg, density * fractions[i]);
+      target_set.insert(pdg);
+    }
+    impl_->weights.emplace(material, std::move(material_weights));
+  }
+  for (int pdg : target_set) targets_.push_back(pdg);
+
+  // Scan-volume bounding box, mapped to the master frame.
+  G4ThreeVector lo, hi;
+  top->GetSolid()->BoundingLimits(lo, hi);
+  TVector3 min_m{INFINITY, INFINITY, INFINITY};
+  TVector3 max_m{-INFINITY, -INFINITY, -INFINITY};
+  for (int corner = 0; corner < 8; ++corner) {
+    G4ThreeVector const local{corner & 1 ? hi.x() : lo.x(),
+                              corner & 2 ? hi.y() : lo.y(),
+                              corner & 4 ? hi.z() : lo.z()};
+    auto const master = impl_->top_to_master(local) / 1e3;  // mm -> m
+    for (int axis = 0; axis < 3; ++axis) {
+      min_m[axis] = std::min(min_m[axis], master[axis]);
+      max_m[axis] = std::max(max_m[axis], master[axis]);
+    }
+  }
+  extents_ = Extents{min_m, max_m};
 }
 
 ShipGeomAnalyzer::~ShipGeomAnalyzer() {
@@ -243,7 +242,7 @@ genie::PathLengthList const& ShipGeomAnalyzer::ComputePathLengths(
   G4ThreeVector const direction_master =
       G4ThreeVector{p.Px(), p.Py(), p.Pz()}.unit();
   auto const origin = impl_->master_to_top(origin_master);
-  auto const direction = (impl_->rotation.inverse() * direction_master).unit();
+  auto const direction = (impl_->inverse_rotation * direction_master).unit();
 
   impl_->scan = geometry_thread().run(
       [&] { return impl_->scanner->scan(origin, direction); });
