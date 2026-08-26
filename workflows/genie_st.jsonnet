@@ -48,7 +48,9 @@
       seed: 20260706,
       // Cache for the max-path-lengths flux scan: computed and saved on the
       // first run, loaded on subsequent runs. Depends on geometry AND flux —
-      // regenerate when either changes.
+      // regenerate when either changes. With flux_format 'gsimple' the scan
+      // also advances the flux read position (GSimpleNtpFlux does not rewind
+      // on Clear), so reuse one cache file across runs for reproducibility.
       max_path_lengths_file: 'maxpl-ship.xml',
     },
     // aegir plugins from here on.

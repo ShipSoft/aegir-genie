@@ -209,6 +209,15 @@ GenieDriverBundle make_genie_driver(GenieSourceConfig const& cfg,
   // not count towards the delivered POT. Consequently a cached
   // max_path_lengths_file depends on the flux as well as the geometry —
   // regenerate it when either changes.
+  //
+  // Flux read position after the scan: ShipFluxDriver::Clear also rewinds to
+  // entry 0, so for flux_format 'ship' event generation consumes the same
+  // ray sequence whether the scan ran or a cached file was loaded. GENIE's
+  // GSimpleNtpFlux::Clear only resets the exposure counters and does NOT
+  // rewind, so for 'gsimple' the first run (scan consumes ~scanner_particles_
+  // rays) generates from a different flux subsequence than later runs that
+  // load the cache (exactly as gevgen_fnal behaves). For exact 'gsimple'
+  // reproduction, generate the cache once and reuse it for every run.
   bundle.geom->SetScannerFlux(bundle.flux.get());
 
   // 7. MC job driver.

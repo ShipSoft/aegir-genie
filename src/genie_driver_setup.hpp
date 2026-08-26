@@ -87,7 +87,12 @@ std::string spline_file_tune(std::string const& path);
 // number). Together with in-order flux consumption this makes each event a
 // pure function of (config, base seed, event number), so the plugin and the
 // standalone app produce identical sequences for identical configs, and
-// re-running a job reproduces it exactly.
+// re-running a job reproduces it exactly. Caveat for flux_format 'gsimple':
+// GSimpleNtpFlux does not rewind on Clear("CycleHistory"), so the flux
+// position after the max-path-lengths scan — and hence the event sequence —
+// additionally depends on whether the scan ran or a cached
+// max_path_lengths_file was loaded (see make_genie_driver); reuse one cache
+// file across runs for exact reproduction.
 void reseed_event(long base_seed, std::uint32_t event_number);
 
 // Debug aid: when the AEGIR_GENIE_RNG_TRACE environment variable is set,
