@@ -92,7 +92,8 @@ std::string spline_file_tune(std::string const& path);
 // position after the max-path-lengths scan — and hence the event sequence —
 // additionally depends on whether the scan ran or a cached
 // max_path_lengths_file was loaded (see make_genie_driver); reuse one cache
-// file across runs for exact reproduction.
+// file across runs for exact reproduction (the cache-building run itself
+// samples the shifted subsequence — compare only cache-loading runs).
 void reseed_event(long base_seed, std::uint32_t event_number);
 
 // Debug aid: when the AEGIR_GENIE_RNG_TRACE environment variable is set,

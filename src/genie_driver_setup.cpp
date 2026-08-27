@@ -217,7 +217,10 @@ GenieDriverBundle make_genie_driver(GenieSourceConfig const& cfg,
   // rewind, so for 'gsimple' the first run (scan consumes ~scanner_particles_
   // rays) generates from a different flux subsequence than later runs that
   // load the cache (exactly as gevgen_fnal behaves). For exact 'gsimple'
-  // reproduction, generate the cache once and reuse it for every run.
+  // reproduction, generate the cache once and reuse it for every run: the
+  // cache-building run's own events come from the shifted subsequence, so
+  // only runs that load the pre-existing cache reproduce each other — don't
+  // compare the cache-building run's output against theirs.
   bundle.geom->SetScannerFlux(bundle.flux.get());
 
   // 7. MC job driver.
