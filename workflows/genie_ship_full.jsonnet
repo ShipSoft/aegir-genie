@@ -39,7 +39,9 @@ local geometry = std.extVar('geometry');
       // Computed and saved on the first run; flux-dependent (see README).
       // For gsimple flux the scan also advances the flux read position
       // (GSimpleNtpFlux does not rewind on Clear), so reuse one cache file
-      // across runs for reproducible event sequences.
+      // across runs for reproducible event sequences (the cache-building
+      // run itself samples a different subsequence — use cache-loading runs
+      // for comparisons).
       max_path_lengths_file: S + '/maxpl_ship.xml',
     },
     field: { cpp: 'field_null_provider' },
