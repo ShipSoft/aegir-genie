@@ -16,6 +16,9 @@ requires-pixi = ">=0.68"
 # SHiP/HEP packages (prefix.dev/ship + conda-forge)
 shipdatamodel = "*"
 phlex = ">=0.4.1"
+# aegir/mc_particle_source.hpp (aegir::source_helper), installed by aegir
+# since 0.4.
+aegir = ">=0.4"
 root = ">=6.40"
 # phlex/shipdatamodel are C++23 — pull the matching ROOT build variant.
 root_cxx_standard = "==23"
