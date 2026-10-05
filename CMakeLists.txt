@@ -19,7 +19,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 find_package(SHiPDataModel REQUIRED)
 # Geometry service (GeoModel-backed, brings Geant4 via its public interface).
 # 0.3: ship::geometry_thread() and SHiPGeometryService::sharedFromFile, both
-# shared with aegir's geant4_module in the full in-process chain (issue #11).
+# shared with aegir's geant4_module in the full in-process chain.
 find_package(SHiPGeometryService 0.3 CONFIG REQUIRED)
 
 find_package(phlex 0.4.1 REQUIRED)

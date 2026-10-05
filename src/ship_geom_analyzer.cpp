@@ -38,7 +38,7 @@ namespace aegir {
 namespace {
 
 // The process-wide Geant4 geometry thread (shared with every other Geant4
-// geometry user, e.g. aegir's geant4_module in the full chain — issue #11):
+// geometry user, e.g. aegir's geant4_module in the full chain):
 // only a single thread per process may create Geant4 geometry.
 using ship::geometry_thread;
 

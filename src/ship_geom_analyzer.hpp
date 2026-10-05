@@ -22,7 +22,7 @@
 // All Geant4 work (GeoModel->G4 conversion, navigation, teardown) is
 // confined to the process-wide ship::geometry_thread(), shared by every
 // Geant4 geometry user in the process (all analyzers, and aegir's
-// geant4_module in the full chain — issue #11): the conda Geant4 is an MT
+// geant4_module in the full chain): the conda Geant4 is an MT
 // build, whose logical/physical volumes keep per-thread state usable only
 // on the creating thread — and only a single thread per process may create
 // geometry at all — while phlex may run even a serial source on changing

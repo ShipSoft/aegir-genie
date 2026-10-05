@@ -13,8 +13,11 @@
 // alongside this repo's build directory (activate.sh takes care of the
 // latter).
 //
-// Runtime inputs that must exist (see README.md § Remaining work):
-//   - cross-section splines for the SHiP target nuclei (gmkspl output),
+// Runtime inputs that must exist:
+//   - cross-section splines for the SHiP target nuclei: the genie-splines-ship
+//     package installs them as $CONDA_PREFIX/share/genie-splines-ship/
+//     gxspl-ship.xml (the `splines` path below is relative to the working
+//     directory),
 //   - a schema-v1 neutrino flux file (scripts/make_flux_ntuple.py writes a
 //     synthetic one; scripts/convert_fairship_nu_flux.py in aegir converts
 //     real productions),

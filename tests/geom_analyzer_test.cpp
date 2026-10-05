@@ -358,7 +358,7 @@ void test_second_geant4_user() {
   std::cout << "second Geant4 user (geant4_module-style master init):\n";
   // In the full in-process chain, aegir's geant4_module initialises its run
   // manager on ship::geometry_thread() after the analyzer has converted the
-  // shared geometry (issue #11). Emulate that master init — reopen, place a
+  // shared geometry. Emulate that master init — reopen, place a
   // world, create a region, close (voxelise) the full geometry — and check
   // the analyzer still scans correctly afterwards.
   auto analyzer = make_analyzer(
