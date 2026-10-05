@@ -8,6 +8,7 @@
 #include <TPythia6.h>
 #include <TRandom3.h>
 
+#include <SHiP/random/philox_rng.hpp>
 #include <cstdio>
 #include <cstdlib>
 #include <filesystem>
@@ -26,7 +27,6 @@
 #include "GeometryService/SHiPGeometryService.h"
 #include "Tools/Flux/GFluxExposureI.h"
 #include "Tools/Flux/GSimpleNtpFlux.h"
-#include "philox_rng.hpp"
 #include "ship_flux_driver.hpp"
 #include "ship_geom_analyzer.hpp"
 
@@ -35,7 +35,7 @@ namespace aegir {
 namespace {
 
 // Philox stream selector for the GENIE reseeding, distinct from the other
-// aegir generators (see philox_rng.hpp).
+// aegir generators (see SHiP::random::PhiloxRng).
 constexpr std::uint32_t kGenieStream = 0x47454E49;  // "GENI"
 
 // Startup sanity log: the first flux ray (SI meters, per the GFluxI
@@ -255,8 +255,8 @@ void reseed_event(long base_seed, std::uint32_t event_number) {
   // counter ranges. The derived TRandom3 seed is one 32-bit value, so
   // accidental birthday collisions (~N²/2³³ over N events) are possible.
   // cfg.validate() guarantees base_seed fits in 32 bits.
-  PhiloxRng rng{static_cast<std::uint32_t>(base_seed), kGenieStream,
-                event_number};
+  SHiP::random::PhiloxRng rng{static_cast<std::uint32_t>(base_seed),
+                              kGenieStream, event_number};
   // TRandom3 seeds are UInt_t; keep the full 32-bit range but avoid 0
   // (which TRandom3 interprets as "seed from clock").
   auto const seed = 1 + static_cast<long>(rng.uniform() * 4294967294.0);
