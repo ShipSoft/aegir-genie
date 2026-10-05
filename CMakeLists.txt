@@ -45,7 +45,7 @@ find_package(
         ROOTNTuple
 )
 
-find_path(Random123_INCLUDE_DIR Random123/philox.h REQUIRED)
+find_package(SHiPRandom 0.2 REQUIRED)
 
 # ── GENIE ────────────────────────────────────────────────────────────────────
 # GENIE has no CMake config; create an imported target from genie-config
@@ -190,7 +190,7 @@ add_library(
 set_target_properties(aegir_genie_core PROPERTIES POSITION_INDEPENDENT_CODE ON)
 target_include_directories(
     aegir_genie_core
-    PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src ${Random123_INCLUDE_DIR}
+    PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
 target_link_libraries(
     aegir_genie_core
@@ -198,6 +198,7 @@ target_link_libraries(
         ROOT::ROOTNTuple
         GENIE::GENIE
         SHiPGeometryService::SHiPGeometryService
+        SHiP::Random
 )
 
 # Phlex plugin: the embedded GENIE event generator source.
