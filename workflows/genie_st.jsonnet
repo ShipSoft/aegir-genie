@@ -27,6 +27,7 @@
 //   - the GeoModel geometry db (the same file the geant4 geomodel provider
 //     loads; bare filenames resolve via $SHIPGEOMETRY_ROOT/share/geometry).
 {
+  stage: 'simulation',
   driver: {
     cpp: 'generate_layers',
     layers: {
@@ -36,6 +37,7 @@
   sources: {
     genie: {
       cpp: 'genie_source',
+      stage: 'simulation',
       // GENIE comprehensive model tune; must match the splines exactly.
       tune: 'G18_02a_02_11b',
       splines: 'gxspl-ship.xml',

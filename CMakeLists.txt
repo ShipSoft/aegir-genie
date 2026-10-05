@@ -22,13 +22,7 @@ find_package(SHiPDataModel REQUIRED)
 # shared with aegir's geant4_module in the full in-process chain (issue #11).
 find_package(SHiPGeometryService 0.3 CONFIG REQUIRED)
 
-# Phlex's cmake config does not call find_dependency for its transitive deps
-# (still true as of phlex 0.3.0: its generated deps block is empty), so declare
-# them explicitly before find_package(phlex).
-find_package(Boost REQUIRED COMPONENTS json)
-find_package(TBB REQUIRED)
-find_package(spdlog REQUIRED)
-find_package(phlex REQUIRED)
+find_package(phlex 0.4.1 REQUIRED)
 find_package(
     ROOT
     6.40

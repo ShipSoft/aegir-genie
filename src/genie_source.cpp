@@ -44,8 +44,9 @@ namespace {
 
 class GenieSource : public phlex::source {
  public:
-  explicit GenieSource(aegir::GenieSourceConfig cfg)
-      : cfg_{std::move(cfg)},
+  GenieSource(std::string stage, aegir::GenieSourceConfig cfg)
+      : stage_{std::move(stage)},
+        cfg_{std::move(cfg)},
         bundle_{aegir::make_genie_driver(cfg_, "genie_source")} {}
 
   // Phlex may dispatch generate() calls out of event-number order (serial
@@ -82,15 +83,13 @@ class GenieSource : public phlex::source {
     return out;
   }
 
-  phlex::detail::provider_bundles create_providers(
+  phlex::provider_bundles create_providers(
       phlex::product_selector const& selector) override {
     return aegir::mc_particle_provider_bundles(
-        selector,
+        selector, stage_,
         [this](phlex::data_cell_index const& id) { return generate(id); },
         phlex::concurrency::serial);
   }
-
-  phlex::index_generator indices() override { co_return; }
 
  private:
   std::vector<SHiP::MCParticle> generate_in_order(std::size_t event_number) {
@@ -149,6 +148,7 @@ class GenieSource : public phlex::source {
     return particles;
   }
 
+  std::string stage_;
   aegir::GenieSourceConfig cfg_;
   aegir::GenieDriverBundle bundle_;  // initialized after cfg_ (declared last)
 
@@ -173,5 +173,7 @@ PHLEX_REGISTER_SOURCE(s, config) {
   cfg.max_path_lengths_file =
       config.get<std::string>("max_path_lengths_file", std::string{});
 
-  s.add_source<GenieSource>("genie", std::move(cfg));
+  auto stage = aegir::source_stage(config, "genie_source");
+
+  s.add_source<GenieSource>("genie", std::move(stage), std::move(cfg));
 }
