@@ -23,6 +23,7 @@
 // aegir::reseed_event).
 
 #include <SHiP/MCParticle.hpp>
+#include <aegir/mc_particle_source.hpp>
 #include <array>
 #include <cstdint>
 #include <map>
@@ -38,7 +39,6 @@
 #include "Framework/GHEP/GHepStatus.h"
 #include "genie_config.hpp"
 #include "genie_driver_setup.hpp"
-#include "mc_particle_source.hpp"
 
 namespace {
 

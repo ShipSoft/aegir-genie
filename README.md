@@ -35,11 +35,11 @@ compatible), a term that comes from GENIE itself (whose own GPL text ships with
 the GENIE package). This repository's sources carry no GPL-licensed file, so
 `LICENSES/` holds only the LGPL text.
 
-Two helper headers (`src/mc_particle_source.hpp`, `src/philox_rng.hpp`) are
-vendored unchanged from aegir and keep their LGPL-3.0-or-later notices — now the
-same license as the rest of this repository. They should move to a shared
-package once one exists (tracked as follow-up in aegir's GENIE integration
-plan).
+The generator-source helper (`aegir/mc_particle_source.hpp`) comes from the
+aegir package, which installs it for plugins like this one; including an
+LGPL header does not make aegir depend on GENIE. One helper header,
+`src/philox_rng.hpp`, is still vendored unchanged from aegir and keeps its
+LGPL-3.0-or-later notice, the same license as the rest of this repository.
 
 Related, but without GENIE linkage (and therefore in aegir, not here):
 the `genie_reader_source` plugin, which reads pre-generated GENIE rootracker
