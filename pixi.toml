@@ -15,7 +15,7 @@ requires-pixi = ">=0.68"
 [dependencies]
 # SHiP/HEP packages (prefix.dev/ship + conda-forge)
 shipdatamodel = "*"
-phlex = ">=0.3.0"
+phlex = ">=0.4.1"
 root = ">=6.40"
 # phlex/shipdatamodel are C++23 — pull the matching ROOT build variant.
 root_cxx_standard = "==23"
@@ -41,10 +41,6 @@ geant4 = ">=11.3"
 # geomodel-core does not list it as a runtime dep (as in aegir).
 eigen = "*"
 
-# C++ libraries (phlex's cmake config lacks find_dependency for these)
-libboost-devel = "*"
-tbb-devel = "*"
-spdlog = "*"
 # GENIE's public headers include log4cpp; declared explicitly (it also
 # arrives as a genie run dependency).
 log4cpp = "*"

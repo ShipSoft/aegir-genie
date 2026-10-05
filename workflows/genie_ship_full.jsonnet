@@ -24,10 +24,12 @@
 local S = std.extVar('inputs');
 local geometry = std.extVar('geometry');
 {
+  stage: 'simulation',
   driver: { cpp: 'generate_layers', layers: { event: { total: 200 } } },
   sources: {
     genie: {
       cpp: 'genie_source',
+      stage: 'simulation',
       tune: 'G18_02a_02_11b',
       splines: S + '/gxspl-ship.xml',
       flux_file: S + '/gsimple_flux_shuffled.root',
