@@ -51,7 +51,7 @@ plugin.
 | Piece | State |
 |---|---|
 | `pixi install` | works |
-| `genie_source` plugin | full chain (GENIE → Geant4 → output) validated on the production SHiP geometry; runs in one process — the geometry is shared with `geant4_module` and converted once (issue #11) |
+| `genie_source` plugin | full chain (GENIE → Geant4 → output) validated on the production SHiP geometry; runs in one process — the geometry is shared with `geant4_module` and converted once |
 | `gevgen_ship` app | validated against `gevgen_fnal` on identical inputs — see [docs/validation.md](docs/validation.md) |
 | `ShipFluxDriver` (flux-file reading, unit conversions, exposure accounting) | works, unit-tested (`pixi run test`) |
 | event generation (`GMCJDriver::GenerateEvent`) | works; embedded and `gevgen_ship` paths verified content-identical (incl. full geometry) |
@@ -207,7 +207,7 @@ they currently segfault on exit after writing their output (#27).
 permits only one geometry-creating thread per process (upstream Geant4 bug
 #2747), so both plugins use the same geometry service instance and the same
 Geant4 geometry thread (`ship::geometry_thread()` from shipgeometryservice);
-the geometry is converted once (issue #11, fixed by #13). The two-step path,
+the geometry is converted once. The two-step path,
 `gevgen_ship` → `gntpc -f rootracker` → aegir's `genie_reader_source`,
 remains available for validation (see below).
 
@@ -245,23 +245,14 @@ their exposure. `gevgen_ship --help` lists all options; `--dry-run` stops
 after `GMCJDriver::Configure()` to check tune/splines/geometry/flux wiring
 without generating.
 
-## Remaining work for first generated events
+## Open work
 
-1. **Cross-section splines** — the hard blocker. Package `gmkspl` output for
-   the SHiP target nuclei (W, Fe, Pb, Si, …) over the SHiP energy range for
-   the chosen tune(s) as a `genie-splines-ship` conda package (aegir GENIE
-   plan, Phase 2), or document a one-off `gmkspl` production. The spline file
-   must match the configured tune exactly.
-2. **LHAPDF data** — the tune's PDF set (e.g. GRV98lo for G18 tunes) must be
+1. **LHAPDF data** — the tune's PDF set (e.g. GRV98lo for G18 tunes) must be
    fetchable/installed where LHAPDF finds it (`lhapdf install GRV98lo` or a
    data package); only the LHAPDF library ships with the conda package.
-3. **A real flux file** — convert a FairShip neutrino production to schema v1
+2. **A real flux file** — convert a FairShip neutrino production to schema v1
    (weights and POT included).
-4. Validate against the `genie_reader_source` path (same flux + geometry
-   through `gevgen_ship` + `gntpc -f rootracker`, see above): vertex
-   material/z distributions, energy spectra, final-state multiplicities
-   (aegir plan, Phase 4).
 
-Follow-ups beyond first events: POT/exposure data product (needs a data-model
+Further follow-ups: POT/exposure data product (needs a data-model
 addition), unweighted flux generation (accept–reject on ray weights),
 per-event interaction summaries.
