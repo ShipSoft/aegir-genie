@@ -17,6 +17,7 @@
 
 #include <ROOT/RNTupleModel.hxx>
 #include <ROOT/RNTupleWriter.hxx>
+#include <SHiP/random/philox_rng.hpp>
 #include <cmath>
 #include <cstdint>
 #include <cstdio>
@@ -28,7 +29,6 @@
 
 #include "Tools/Flux/GSimpleNtpFlux.h"
 #include "genie_config.hpp"
-#include "philox_rng.hpp"
 #include "ship_flux_driver.hpp"
 
 namespace {
@@ -341,7 +341,7 @@ void test_gsimple_driver(std::string const& path) {
 void test_philox_substreams() {
   std::cout << "PhiloxRng per-event sub-streams:\n";
   auto first_draw = [](std::uint32_t seed, std::uint32_t event) {
-    aegir::PhiloxRng rng{seed, 0x47454E49, event};  // as reseed_event
+    SHiP::random::PhiloxRng rng{seed, 0x47454E49, event};  // as reseed_event
     return rng.uniform();
   };
   check(first_draw(20260706, 0) == first_draw(20260706, 0),

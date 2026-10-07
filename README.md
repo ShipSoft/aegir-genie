@@ -37,9 +37,10 @@ the GENIE package). This repository's sources carry no GPL-licensed file, so
 
 The generator-source helper (`aegir/mc_particle_source.hpp`) comes from the
 aegir package, which installs it for plugins like this one; including an
-LGPL header does not make aegir depend on GENIE. One helper header,
-`src/philox_rng.hpp`, is still vendored unchanged from aegir and keeps its
-LGPL-3.0-or-later notice, the same license as the rest of this repository.
+LGPL header does not make aegir depend on GENIE. The per-event
+reseeding uses `SHiP::random::PhiloxRng` from
+[ship-random](https://github.com/ShipSoft/ship-random), the generator aegir,
+Shannon and Trout use too.
 
 Related, but without GENIE linkage (and therefore in aegir, not here):
 the `genie_reader_source` plugin, which reads pre-generated GENIE rootracker
