@@ -23,6 +23,9 @@ find_package(SHiPDataModel REQUIRED)
 find_package(SHiPGeometryService 0.3 CONFIG REQUIRED)
 
 find_package(phlex 0.4.1 REQUIRED)
+# aegir::source_helper: the shared generator-source helper
+# (aegir/mc_particle_source.hpp).
+find_package(aegir CONFIG REQUIRED)
 find_package(
     ROOT
     6.40
@@ -201,7 +204,7 @@ target_link_libraries(
 add_library(genie_source MODULE src/genie_source.cpp)
 target_link_libraries(
     genie_source
-    PRIVATE phlex::module SHiP::SHiPDataModel aegir_genie_core
+    PRIVATE phlex::module aegir::source_helper aegir_genie_core
 )
 
 # Standalone generator app: same driver assembly as the plugin, native GHEP
