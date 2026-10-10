@@ -1,6 +1,11 @@
 version: 7
 platforms:
 - name: linux-64
+  virtual-packages:
+  - __unix=0=0
+  - __linux=4.18
+  - __glibc=2.28
+  - __archspec=0=x86_64
 environments:
   default:
     channels:
@@ -789,8 +794,7 @@ environments:
       - conda: https://prefix.dev/ship/noarch/genie-data-3.06.02-h4616a5c_0.conda
       - conda: https://prefix.dev/ship/noarch/genie-splines-ship-3.06.02-production_4616a5c_100.conda
       - conda: https://prefix.dev/ship/noarch/random123-1.14.0-h4616a5c_1.conda
-      - pypi: https://files.pythonhosted.org/packages/1f/24/d78b534075bfc9cf51b555c7d180ff516636b83e42565263dc84b8f4b794/gersemi-0.27.7-cp314-cp314-manylinux_2_28_x86_64.whl
-      - pypi: https://files.pythonhosted.org/packages/49/14/32e3a2c4313367a38b9c8b564785444bb3ed31317386fb81efd80496a5af/ignore_python-0.3.3-cp314-cp314-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/04/53/f2815b34359959172a6931932adde8e631de727a697a858265690030b55b/gersemi-0.29.2-cp314-cp314-manylinux_2_28_x86_64.whl
 packages:
 - conda: https://conda.anaconda.org/conda-forge/linux-64/_openmp_mutex-4.5-7_kmp_llvm.conda
   build_number: 7
@@ -4503,7 +4507,7 @@ packages:
   license: MIT
   license_family: MIT
   purls:
-  - pkg:pypi/ruff?source=compressed-mapping
+  - pkg:pypi/ruff?source=hash-mapping
   run_exports: {}
   size: 9342178
   timestamp: 1782428525856
@@ -4696,7 +4700,7 @@ packages:
   license: BSD-2-Clause
   license_family: BSD
   purls:
-  - pkg:pypi/wrapt?source=compressed-mapping
+  - pkg:pypi/wrapt?source=hash-mapping
   run_exports: {}
   size: 118096
   timestamp: 1782133651496
@@ -5551,7 +5555,7 @@ packages:
   license: MIT
   license_family: MIT
   purls:
-  - pkg:pypi/charset-normalizer?source=compressed-mapping
+  - pkg:pypi/charset-normalizer?source=hash-mapping
   run_exports: {}
   size: 61278
   timestamp: 1783374645872
@@ -5565,7 +5569,7 @@ packages:
   license: BSD-3-Clause
   license_family: BSD
   purls:
-  - pkg:pypi/click?source=compressed-mapping
+  - pkg:pypi/click?source=hash-mapping
   run_exports: {}
   size: 107155
   timestamp: 1783085363526
@@ -7697,18 +7701,10 @@ packages:
   run_exports: {}
   size: 44148
   timestamp: 1781443807524
-- pypi: https://files.pythonhosted.org/packages/1f/24/d78b534075bfc9cf51b555c7d180ff516636b83e42565263dc84b8f4b794/gersemi-0.27.7-cp314-cp314-manylinux_2_28_x86_64.whl
+- pypi: https://files.pythonhosted.org/packages/04/53/f2815b34359959172a6931932adde8e631de727a697a858265690030b55b/gersemi-0.29.2-cp314-cp314-manylinux_2_28_x86_64.whl
   name: gersemi
-  version: 0.27.7
-  sha256: 18eac04a70f4e9578e200f10d1da4f2af4d2487e65a0d54aa4f12701fb9af4f6
+  version: 0.29.2
+  sha256: a8a851f3af50e185beff001e4666b24f4bb24b3f2810671eb4d04b30fff7066c
   requires_dist:
-  - ignore-python>=0.3,<0.4
-  - platformdirs
   - pyyaml>=5,<7
-  - colorama>=0.4 ; extra == 'color'
-  requires_python: '>=3.8'
-- pypi: https://files.pythonhosted.org/packages/49/14/32e3a2c4313367a38b9c8b564785444bb3ed31317386fb81efd80496a5af/ignore_python-0.3.3-cp314-cp314-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
-  name: ignore-python
-  version: 0.3.3
-  sha256: 0f50dd3c3f0ef982e256d9e702b44c1d81cbe0da2d98746d5b189bc1fd5191cd
   requires_python: '>=3.8'
