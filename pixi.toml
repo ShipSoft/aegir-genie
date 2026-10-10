@@ -136,7 +136,7 @@ git diff --unified=0 --diff-filter=d origin/main -- '*.cpp' '*.hpp' '*.cxx' '*.h
 prek = "*"
 python = ">=3.11"
 ruff = "*"
-clang-format = "22.*"
+clang-format = "23.*"
 codespell = "*"
 reuse = "*"
 cffconvert = "*"
