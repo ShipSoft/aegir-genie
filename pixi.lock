@@ -45,7 +45,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/eigen-5.0.1-hc65338a_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/eigen-abi-5.0.1.80-hf414acd_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/epoxy-1.5.10-hb03c661_2.conda
-      - conda: https://conda.anaconda.org/conda-forge/linux-64/expat-2.8.1-hecca717_1.conda
+      - conda: https://conda.anaconda.org/conda-forge/linux-64/expat-2.8.5-hd2095e1_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/fastjet-cxx-3.5.1-h171cf75_2.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/fftw-3.3.11-nompi_h3b011a4_100.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/fmt-12.1.0-hff5e90c_0.conda
@@ -58,9 +58,9 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/gcc_linux-64-14.3.0-h50e9bb6_27.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/gdk-pixbuf-2.44.8-h68053f1_2.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/geant4-11.4.2-py314hda65da8_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/linux-64/geomodel-core-6.27.0-hdcdb502_3.conda
-      - conda: https://conda.anaconda.org/conda-forge/linux-64/geomodel-g4-6.27.0-hd4f882c_3.conda
-      - conda: https://conda.anaconda.org/conda-forge/linux-64/geomodel-tools-6.27.0-hd4f882c_3.conda
+      - conda: https://conda.anaconda.org/conda-forge/linux-64/geomodel-core-6.31.0-h592eea5_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/linux-64/geomodel-g4-6.31.0-h7875ac7_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/linux-64/geomodel-tools-6.31.0-h7875ac7_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/gettext-0.25.1-h3f43e3d_1.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/gettext-tools-0.25.1-h3f43e3d_1.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/giflib-6.1.3-hebe6cf0_2.conda
@@ -110,7 +110,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/libegl-1.7.0-ha4b6fd6_3.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/libegl-devel-1.7.0-ha4b6fd6_3.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/libev-4.33-hd590300_2.conda
-      - conda: https://conda.anaconda.org/conda-forge/linux-64/libexpat-2.8.1-hecca717_1.conda
+      - conda: https://conda.anaconda.org/conda-forge/linux-64/libexpat-2.8.5-hd2095e1_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/libffi-3.7.0-h81df57d_1.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/libfreetype-2.14.3-ha770c72_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/libfreetype6-2.14.3-h73754d4_0.conda
@@ -185,7 +185,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/pango-1.56.4-hda50119_1.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/pcre-8.45-h9c3ff4c_0.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/linux-64/pcre2-10.47-haa7fec5_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/linux-64/phlex-0.4.1-np2py314h7da9284_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/linux-64/phlex-0.4.3-np2py314h7da9284_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/pixman-0.46.4-h54a6638_1.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/portalocker-3.2.0-py314hdafbbf9_1.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/psutil-7.2.2-py314h0f05182_0.conda
@@ -381,17 +381,22 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/webencodings-0.5.1-pyhd8ed1ab_3.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/websocket-client-1.9.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/zipp-4.1.0-pyhcf101f3_0.conda
+      - conda: https://prefix.dev/ship/linux-64/aegir-0.4.0-hb0f4dca_0.conda
+      - conda: https://prefix.dev/ship/linux-64/field-service-core-0.2.0-h0518e97_0.conda
+      - conda: https://prefix.dev/ship/linux-64/field-service-g4-0.2.0-h4c13c63_0.conda
+      - conda: https://prefix.dev/ship/linux-64/field-service-mapio-0.2.0-h4c13c63_0.conda
       - conda: https://prefix.dev/ship/linux-64/genie-3.06.02-pythia6_7f30c96_9.conda
       - conda: https://prefix.dev/ship/linux-64/libjsonnet-0.22.0-hb0f4dca_1.conda
       - conda: https://prefix.dev/ship/linux-64/mp-units-2.5.0-hb0f4dca_5.conda
       - conda: https://prefix.dev/ship/linux-64/pythia6-6.4.28-hb0f4dca_6.conda
       - conda: https://prefix.dev/ship/linux-64/rootegpythia6-0.1-h0518e97_11.conda
       - conda: https://prefix.dev/ship/linux-64/shipdatamodel-0.5.0-h0518e97_0.conda
-      - conda: https://prefix.dev/ship/linux-64/shipgeometry-0.2.1-hb0f4dca_1.conda
-      - conda: https://prefix.dev/ship/linux-64/shipgeometryservice-0.3.0-hb0f4dca_0.conda
+      - conda: https://prefix.dev/ship/linux-64/shipgeometry-0.2.1-hb0f4dca_3.conda
+      - conda: https://prefix.dev/ship/linux-64/shipgeometryservice-0.4.0-hb0f4dca_1.conda
       - conda: https://prefix.dev/ship/noarch/genie-data-3.06.02-h4616a5c_0.conda
       - conda: https://prefix.dev/ship/noarch/genie-splines-ship-3.06.02-production_4616a5c_100.conda
       - conda: https://prefix.dev/ship/noarch/random123-1.14.0-h4616a5c_1.conda
+      - conda: https://prefix.dev/ship/noarch/ship-random-0.2.0-h4616a5c_0.conda
   lint:
     channels:
     - url: https://prefix.dev/ship/
@@ -438,7 +443,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/eigen-5.0.1-hc65338a_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/eigen-abi-5.0.1.80-hf414acd_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/epoxy-1.5.10-hb03c661_2.conda
-      - conda: https://conda.anaconda.org/conda-forge/linux-64/expat-2.8.1-hecca717_1.conda
+      - conda: https://conda.anaconda.org/conda-forge/linux-64/expat-2.8.5-hd2095e1_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/fastjet-cxx-3.5.1-h171cf75_2.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/fftw-3.3.11-nompi_h3b011a4_100.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/fmt-12.1.0-hff5e90c_0.conda
@@ -451,9 +456,9 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/gcc_linux-64-14.3.0-h50e9bb6_27.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/gdk-pixbuf-2.44.8-h68053f1_2.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/geant4-11.4.2-py314hda65da8_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/linux-64/geomodel-core-6.27.0-hdcdb502_3.conda
-      - conda: https://conda.anaconda.org/conda-forge/linux-64/geomodel-g4-6.27.0-hd4f882c_3.conda
-      - conda: https://conda.anaconda.org/conda-forge/linux-64/geomodel-tools-6.27.0-hd4f882c_3.conda
+      - conda: https://conda.anaconda.org/conda-forge/linux-64/geomodel-core-6.31.0-h592eea5_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/linux-64/geomodel-g4-6.31.0-h7875ac7_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/linux-64/geomodel-tools-6.31.0-h7875ac7_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/gettext-0.25.1-h3f43e3d_1.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/gettext-tools-0.25.1-h3f43e3d_1.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/giflib-6.1.3-hebe6cf0_2.conda
@@ -503,7 +508,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/libegl-1.7.0-ha4b6fd6_3.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/libegl-devel-1.7.0-ha4b6fd6_3.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/libev-4.33-hd590300_2.conda
-      - conda: https://conda.anaconda.org/conda-forge/linux-64/libexpat-2.8.1-hecca717_1.conda
+      - conda: https://conda.anaconda.org/conda-forge/linux-64/libexpat-2.8.5-hd2095e1_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/libffi-3.7.0-h81df57d_1.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/libfreetype-2.14.3-ha770c72_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/libfreetype6-2.14.3-h73754d4_0.conda
@@ -579,7 +584,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/pango-1.56.4-hda50119_1.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/pcre-8.45-h9c3ff4c_0.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/linux-64/pcre2-10.47-haa7fec5_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/linux-64/phlex-0.4.1-np2py314h7da9284_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/linux-64/phlex-0.4.3-np2py314h7da9284_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/pixman-0.46.4-h54a6638_1.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/portalocker-3.2.0-py314hdafbbf9_1.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/prek-0.4.8-hb17b654_0.conda
@@ -778,17 +783,22 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/webencodings-0.5.1-pyhd8ed1ab_3.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/websocket-client-1.9.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/zipp-4.1.0-pyhcf101f3_0.conda
+      - conda: https://prefix.dev/ship/linux-64/aegir-0.4.0-hb0f4dca_0.conda
+      - conda: https://prefix.dev/ship/linux-64/field-service-core-0.2.0-h0518e97_0.conda
+      - conda: https://prefix.dev/ship/linux-64/field-service-g4-0.2.0-h4c13c63_0.conda
+      - conda: https://prefix.dev/ship/linux-64/field-service-mapio-0.2.0-h4c13c63_0.conda
       - conda: https://prefix.dev/ship/linux-64/genie-3.06.02-pythia6_7f30c96_9.conda
       - conda: https://prefix.dev/ship/linux-64/libjsonnet-0.22.0-hb0f4dca_1.conda
       - conda: https://prefix.dev/ship/linux-64/mp-units-2.5.0-hb0f4dca_5.conda
       - conda: https://prefix.dev/ship/linux-64/pythia6-6.4.28-hb0f4dca_6.conda
       - conda: https://prefix.dev/ship/linux-64/rootegpythia6-0.1-h0518e97_11.conda
       - conda: https://prefix.dev/ship/linux-64/shipdatamodel-0.5.0-h0518e97_0.conda
-      - conda: https://prefix.dev/ship/linux-64/shipgeometry-0.2.1-hb0f4dca_1.conda
-      - conda: https://prefix.dev/ship/linux-64/shipgeometryservice-0.3.0-hb0f4dca_0.conda
+      - conda: https://prefix.dev/ship/linux-64/shipgeometry-0.2.1-hb0f4dca_3.conda
+      - conda: https://prefix.dev/ship/linux-64/shipgeometryservice-0.4.0-hb0f4dca_1.conda
       - conda: https://prefix.dev/ship/noarch/genie-data-3.06.02-h4616a5c_0.conda
       - conda: https://prefix.dev/ship/noarch/genie-splines-ship-3.06.02-production_4616a5c_100.conda
       - conda: https://prefix.dev/ship/noarch/random123-1.14.0-h4616a5c_1.conda
+      - conda: https://prefix.dev/ship/noarch/ship-random-0.2.0-h4616a5c_0.conda
       - pypi: https://files.pythonhosted.org/packages/1f/24/d78b534075bfc9cf51b555c7d180ff516636b83e42565263dc84b8f4b794/gersemi-0.27.7-cp314-cp314-manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/49/14/32e3a2c4313367a38b9c8b564785444bb3ed31317386fb81efd80496a5af/ignore_python-0.3.3-cp314-cp314-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
 packages:
@@ -1603,21 +1613,21 @@ packages:
     - epoxy >=1.5.10,<1.6.0a0
   size: 411735
   timestamp: 1758743520805
-- conda: https://conda.anaconda.org/conda-forge/linux-64/expat-2.8.1-hecca717_1.conda
-  sha256: bc1e8177a4ebbbfcda98b6f4a1575f3337e69f0d2f1025a84570533ca27b89eb
-  md5: e211a78613b9d50a096644b97cede8f7
+- conda: https://conda.anaconda.org/conda-forge/linux-64/expat-2.8.5-hd2095e1_0.conda
+  sha256: c18c5196847fbf5ba3653f13664bf1a57c87aaa063b87d77c246e3b040aa1963
+  md5: 30a967b6ac673c8f21b64604a2b9ccd6
   depends:
   - __glibc >=2.17,<3.0.a0
-  - libexpat 2.8.1 hecca717_1
-  - libgcc >=14
+  - libexpat 2.8.5 hd2095e1_0
+  - libgcc >=15
   license: MIT
   license_family: MIT
   purls: []
   run_exports:
     weak:
-    - libexpat >=2.8.1,<3.0a0
-  size: 147797
-  timestamp: 1781203608158
+    - libexpat >=2.8.5,<3.0a0
+  size: 151545
+  timestamp: 1790346253137
 - conda: https://conda.anaconda.org/conda-forge/linux-64/fastjet-cxx-3.5.1-h171cf75_2.conda
   sha256: 1ef546236d1fd4599edd29c47ae472b8f145af881206a48daac9815020d4ce6c
   md5: b3037132970aa3b4d4fa50af76a04509
@@ -1840,92 +1850,92 @@ packages:
     - geant4 >=11.4.2,<11.4.3.0a0
   size: 39819844
   timestamp: 1781791088604
-- conda: https://conda.anaconda.org/conda-forge/linux-64/geomodel-core-6.27.0-hdcdb502_3.conda
-  sha256: d5522b33f833a943244ae3f1fbdbaab688d9a96f54be8ef7bb3e3126a98820d7
-  md5: 3411ad1a32c37b226b1d576bc162a224
+- conda: https://conda.anaconda.org/conda-forge/linux-64/geomodel-core-6.31.0-h592eea5_0.conda
+  sha256: 9cc39698439e590d50bb2982b28d4afb83d259e4458fe7c6a4d3be42f78c3d5a
+  md5: a594b57f0de2dc24fbbc2d30d949600a
   depends:
   - __glibc >=2.17,<3.0.a0
   - libstdcxx >=14
   - libgcc >=14
+  - hdf5 >=1.14.6,<1.14.7.0a0
+  - coin3d >=4.0.10,<4.1.0a0
+  - libegl >=1.7.0,<2.0a0
+  - libglu >=9.0.3,<9.1.0a0
+  - xorg-libx11 >=1.8.13,<2.0a0
+  - libsqlite >=3.53.4,<4.0a0
   - qt6-main >=6.11.1,<7.0a0
   - soqt6 >=1.6.3,<1.6.4.0a0
-  - libglvnd >=1.7.0,<2.0a0
-  - libglu >=9.0.3,<9.1.0a0
-  - geant4 >=11.4.2,<11.4.3.0a0
-  - xorg-libx11 >=1.8.13,<2.0a0
   - xorg-libxext >=1.3.7,<2.0a0
-  - libegl >=1.7.0,<2.0a0
-  - libsqlite >=3.53.2,<4.0a0
-  - xerces-c >=3.3.0,<3.4.0a0
-  - coin3d >=4.0.10,<4.1.0a0
-  - hdf5 >=1.14.6,<1.14.7.0a0
+  - geant4 >=11.4.2,<11.4.3.0a0
   - libopengl >=1.7.0,<2.0a0
+  - xerces-c >=3.3.0,<3.4.0a0
+  - libglvnd >=1.7.0,<2.0a0
   license: Apache-2.0
   license_family: APACHE
   purls: []
   run_exports:
     weak:
-    - geomodel-core >=6.27.0,<6.28.0a0
-  size: 882770
-  timestamp: 1782387504957
-- conda: https://conda.anaconda.org/conda-forge/linux-64/geomodel-g4-6.27.0-hd4f882c_3.conda
-  sha256: 8b2359944b596bd89e93a5f951cf46458bb537433dcfab49963a7b5e9f57b3ee
-  md5: 077e81dcba1b5fd9e38e062716c9e694
+    - geomodel-core >=6.31.0,<6.32.0a0
+  size: 881587
+  timestamp: 1785647161063
+- conda: https://conda.anaconda.org/conda-forge/linux-64/geomodel-g4-6.31.0-h7875ac7_0.conda
+  sha256: 7a0931c59cdb1479e015a0393e82a759dcbcff1a9b48b8702fcbf8e5135fc77a
+  md5: 4c39ce4fe6c999d5184497e317699fec
   depends:
   - __glibc >=2.17,<3.0.a0
   - libstdcxx >=14
   - libgcc >=14
+  - hdf5 >=1.14.6,<1.14.7.0a0
+  - coin3d >=4.0.10,<4.1.0a0
+  - libegl >=1.7.0,<2.0a0
+  - libglu >=9.0.3,<9.1.0a0
+  - xorg-libx11 >=1.8.13,<2.0a0
+  - libsqlite >=3.53.4,<4.0a0
   - qt6-main >=6.11.1,<7.0a0
   - soqt6 >=1.6.3,<1.6.4.0a0
-  - libglvnd >=1.7.0,<2.0a0
-  - libglu >=9.0.3,<9.1.0a0
-  - geant4 >=11.4.2,<11.4.3.0a0
-  - xorg-libx11 >=1.8.13,<2.0a0
   - xorg-libxext >=1.3.7,<2.0a0
-  - libegl >=1.7.0,<2.0a0
-  - libsqlite >=3.53.2,<4.0a0
-  - xerces-c >=3.3.0,<3.4.0a0
-  - coin3d >=4.0.10,<4.1.0a0
-  - hdf5 >=1.14.6,<1.14.7.0a0
+  - geant4 >=11.4.2,<11.4.3.0a0
   - libopengl >=1.7.0,<2.0a0
-  - geomodel-core >=6.27.0,<6.28.0a0
+  - xerces-c >=3.3.0,<3.4.0a0
+  - libglvnd >=1.7.0,<2.0a0
+  - geomodel-core >=6.31.0,<6.32.0a0
   license: Apache-2.0
   license_family: APACHE
   purls: []
   run_exports:
     weak:
-    - geomodel-g4 >=6.27.0,<6.28.0a0
-  size: 128737
-  timestamp: 1782387504957
-- conda: https://conda.anaconda.org/conda-forge/linux-64/geomodel-tools-6.27.0-hd4f882c_3.conda
-  sha256: c83a1aa6c16920e3d8fa64082db1bf708b6bf0d5c4f14a5c223f32c55b19091e
-  md5: 2590a6af00e9029bdda6159717e2b319
+    - geomodel-g4 >=6.31.0,<6.32.0a0
+  size: 124577
+  timestamp: 1785647161063
+- conda: https://conda.anaconda.org/conda-forge/linux-64/geomodel-tools-6.31.0-h7875ac7_0.conda
+  sha256: 115e15aac63d54c4e5ba9fdddf5dbb0287982e34185dfce6c7a49a1bf48ad8d1
+  md5: 96af13570d1ca206227c0e2e2830d075
   depends:
   - __glibc >=2.17,<3.0.a0
   - libstdcxx >=14
   - libgcc >=14
+  - hdf5 >=1.14.6,<1.14.7.0a0
+  - coin3d >=4.0.10,<4.1.0a0
+  - libegl >=1.7.0,<2.0a0
+  - libglu >=9.0.3,<9.1.0a0
+  - xorg-libx11 >=1.8.13,<2.0a0
+  - libsqlite >=3.53.4,<4.0a0
   - qt6-main >=6.11.1,<7.0a0
   - soqt6 >=1.6.3,<1.6.4.0a0
-  - libglvnd >=1.7.0,<2.0a0
-  - libglu >=9.0.3,<9.1.0a0
-  - geant4 >=11.4.2,<11.4.3.0a0
-  - xorg-libx11 >=1.8.13,<2.0a0
   - xorg-libxext >=1.3.7,<2.0a0
-  - libegl >=1.7.0,<2.0a0
-  - libsqlite >=3.53.2,<4.0a0
-  - xerces-c >=3.3.0,<3.4.0a0
-  - coin3d >=4.0.10,<4.1.0a0
-  - hdf5 >=1.14.6,<1.14.7.0a0
+  - geant4 >=11.4.2,<11.4.3.0a0
   - libopengl >=1.7.0,<2.0a0
-  - geomodel-core >=6.27.0,<6.28.0a0
+  - xerces-c >=3.3.0,<3.4.0a0
+  - libglvnd >=1.7.0,<2.0a0
+  - geomodel-core >=6.31.0,<6.32.0a0
   license: Apache-2.0
   license_family: APACHE
   purls: []
   run_exports:
     weak:
-    - geomodel-tools >=6.27.0,<6.28.0a0
-  size: 2217787
-  timestamp: 1782387504957
+    - geomodel-tools >=6.31.0,<6.32.0a0
+  size: 2221734
+  timestamp: 1785647161063
 - conda: https://conda.anaconda.org/conda-forge/linux-64/gettext-0.25.1-h3f43e3d_1.conda
   sha256: cbfa8c80771d1842c2687f6016c5e200b52d4ca8f2cc119f6377f64f899ba4ff
   md5: c42356557d7f2e37676e121515417e3b
@@ -2785,20 +2795,20 @@ packages:
     - libev >=4.33,<4.34.0a0
   size: 112766
   timestamp: 1702146165126
-- conda: https://conda.anaconda.org/conda-forge/linux-64/libexpat-2.8.1-hecca717_1.conda
-  sha256: 16feffd9ddbbe5b718515d38ee376c685ba95491cd901244e24671d20b952a77
-  md5: b24d3c612f71e7aa74158d92106318b2
+- conda: https://conda.anaconda.org/conda-forge/linux-64/libexpat-2.8.5-hd2095e1_0.conda
+  sha256: 6de73033a7c5f712c9c5a54124e4581e025691029835e5bceaf10a333a7e7bc0
+  md5: 72cfd2b95b0540247220b42f58a148d7
   depends:
   - __glibc >=2.17,<3.0.a0
-  - libgcc >=14
+  - libgcc >=15
   constrains:
-  - expat 2.8.1.*
+  - expat 2.8.5.*
   license: MIT
   license_family: MIT
   purls: []
   run_exports: {}
-  size: 77856
-  timestamp: 1781203599810
+  size: 77893
+  timestamp: 1790346247149
 - conda: https://conda.anaconda.org/conda-forge/linux-64/libffi-3.7.0-h81df57d_1.conda
   sha256: c8c7583ef063bc3c430f1d48298e5ad24f796a35c22ed5b14183325825a61106
   md5: 6525a0b06aa4fd390795f0740636a9dd
@@ -4042,9 +4052,9 @@ packages:
     - pcre2 >=10.47,<10.48.0a0
   size: 1222481
   timestamp: 1763655398280
-- conda: https://conda.anaconda.org/conda-forge/linux-64/phlex-0.4.1-np2py314h7da9284_0.conda
-  sha256: 4e726a881bde0d1c0df1b87fa9b5a9d349e4e9ee5da836395edc237153b909cd
-  md5: a26190b132a19e7b5b7829b0823f7b43
+- conda: https://conda.anaconda.org/conda-forge/linux-64/phlex-0.4.3-np2py314h7da9284_0.conda
+  sha256: ba4000814be48919c6c1da1d219ce30a9d54565dda3a24777d55d1bff1589185
+  md5: 989c6c157d83773cf999e695104d3762
   depends:
   - python
   - libboost-devel
@@ -4052,27 +4062,27 @@ packages:
   - tbb-devel
   - ms-gsl
   - spdlog
-  - __glibc >=2.17,<3.0.a0
   - libstdcxx >=15
   - libgcc >=15
-  - numpy >=1.25,<3
-  - spdlog >=1.17.0,<1.18.0a0
-  - tbb >=2023.1.0
-  - python_abi 3.14.* *_cp314
+  - __glibc >=2.17,<3.0.a0
   - root_base >=6.40.4,<6.40.5.0a0
-  - fmt >=12.1.0,<12.2.0a0
-  - root_cxx_standard ==23
   - libffi >=3.7.0,<3.8.0a0
-  - libboost >=1.90.0,<1.91.0a0
+  - tbb >=2023.1.0
   - libjsonnet >=0.22.0,<0.23.0a0
+  - python_abi 3.14.* *_cp314
+  - spdlog >=1.17.0,<1.18.0a0
+  - numpy >=1.25,<3
+  - fmt >=12.1.0,<12.2.0a0
+  - libboost >=1.90.0,<1.91.0a0
+  - root_cxx_standard ==23
   license: Apache-2.0
   license_family: APACHE
   purls: []
   run_exports:
     weak:
-    - phlex >=0.4.1,<0.5.0a0
-  size: 1091792
-  timestamp: 1790836701553
+    - phlex >=0.4.3,<0.5.0a0
+  size: 1093076
+  timestamp: 1791525524657
 - conda: https://conda.anaconda.org/conda-forge/linux-64/pixman-0.46.4-h54a6638_1.conda
   sha256: 43d37bc9ca3b257c5dd7bf76a8426addbdec381f6786ff441dc90b1a49143b6a
   md5: c01af13bdc553d1a8fbfff6e8db075f0
@@ -7543,6 +7553,98 @@ packages:
   run_exports: {}
   size: 24190
   timestamp: 1779159948016
+- conda: https://prefix.dev/ship/linux-64/aegir-0.4.0-hb0f4dca_0.conda
+  sha256: 129a41a12207e540eb232270c02dc9978d7dbcbcd3bf63565a3a02cb17113355
+  md5: dc6f56f917d15d0e97159e1d49a16a63
+  depends:
+  - __glibc >=2.17,<3.0.a0
+  - libstdcxx >=16
+  - libgcc >=16
+  - shipdatamodel >=0.5.0,<0.6.0a0
+  - field-service-g4 >=0.2.0,<0.3.0a0
+  - root_cxx_standard ==23
+  - field-service-mapio >=0.2.0,<0.3.0a0
+  - field-service-core >=0.2.0,<0.3.0a0
+  - libzlib >=1.3.2,<2.0a0
+  - spdlog >=1.17.0,<1.18.0a0
+  - phlex >=0.4.3,<0.5.0a0
+  - libfreetype >=2.14.3
+  - libfreetype6 >=2.14.3
+  - libboost >=1.90.0,<1.91.0a0
+  - fmt >=12.1.0,<12.2.0a0
+  - mp-units >=2.5.0,<2.6.0a0
+  - ship-random >=0.2.0,<0.3.0a0
+  - tbb >=2023.1.0
+  - geant4 >=11.4.2,<11.4.3.0a0
+  - libexpat >=2.8.5,<3.0a0
+  - eigen-abi >=5.0.1.80,<5.0.1.81.0a0
+  - root_base >=6.40.4,<6.40.5.0a0
+  - pythia8 >=8.312,<8.400.0a0
+  - shipgeometryservice >=0.4.0,<0.5.0a0
+  license: LGPL-3.0-or-later
+  run_exports: {}
+  size: 666879
+  timestamp: 1791925495697
+- conda: https://prefix.dev/ship/linux-64/field-service-core-0.2.0-h0518e97_0.conda
+  sha256: dab1e4941cf09f62d9dd3c5e84c0b794d4b049b24e00d758d39f6d6f3d578df1
+  md5: 83ff1c532404f9b4bbfbe482989fa133
+  depends:
+  - mp-units
+  - shipdatamodel <1
+  - libstdcxx >=16
+  - libgcc >=16
+  - __glibc >=2.17,<3.0.a0
+  - shipdatamodel >=0.5.0,<0.6.0a0
+  - mp-units >=2.5.0,<2.6.0a0
+  license: LGPL-3.0-or-later
+  run_exports:
+    weak:
+    - field-service-core >=0.2.0,<0.3.0a0
+  size: 92996
+  timestamp: 1790879297661
+- conda: https://prefix.dev/ship/linux-64/field-service-g4-0.2.0-h4c13c63_0.conda
+  sha256: f5dfde163890de483077138ed45ea64c197ac406d20cdc23032e5edcc8997776
+  md5: a721918d4dcb0786cd709cebe1366377
+  depends:
+  - field-service-core ==0.2.0 h0518e97_0
+  - geant4
+  - expat
+  - zlib
+  - freetype
+  - libstdcxx >=16
+  - libgcc >=16
+  - __glibc >=2.17,<3.0.a0
+  - libzlib >=1.3.2,<2.0a0
+  - geant4 >=11.4.2,<11.4.3.0a0
+  - shipdatamodel >=0.5.0,<0.6.0a0
+  - libfreetype >=2.14.3
+  - libfreetype6 >=2.14.3
+  - libexpat >=2.8.5,<3.0a0
+  - mp-units >=2.5.0,<2.6.0a0
+  license: LGPL-3.0-or-later
+  run_exports:
+    weak:
+    - field-service-g4 >=0.2.0,<0.3.0a0
+  size: 57287
+  timestamp: 1790879297661
+- conda: https://prefix.dev/ship/linux-64/field-service-mapio-0.2.0-h4c13c63_0.conda
+  sha256: 56ff40566df694b2999dd9f2e0c0cf7db2057c94ebe023d976a514db4f4e02fb
+  md5: 556f2906041712e238bd999e02a81b19
+  depends:
+  - field-service-core ==0.2.0 h0518e97_0
+  - libstdcxx >=16
+  - libgcc >=16
+  - __glibc >=2.17,<3.0.a0
+  - shipdatamodel >=0.5.0,<0.6.0a0
+  - root_cxx_standard ==23
+  - mp-units >=2.5.0,<2.6.0a0
+  - root_base >=6.40.4,<6.40.5.0a0
+  license: LGPL-3.0-or-later
+  run_exports:
+    weak:
+    - field-service-mapio >=0.2.0,<0.3.0a0
+  size: 179336
+  timestamp: 1790879297661
 - conda: https://prefix.dev/ship/linux-64/genie-3.06.02-pythia6_7f30c96_9.conda
   sha256: 9549a3e8669125de6163b93d40e55b89488692df6ceee09d6e88f93ac033bf4e
   md5: 01e4470f7f82b99ffec8bf2b912a28a4
@@ -7640,42 +7742,46 @@ packages:
     - shipdatamodel >=0.5.0,<0.6.0a0
   size: 80182
   timestamp: 1790672403583
-- conda: https://prefix.dev/ship/linux-64/shipgeometry-0.2.1-hb0f4dca_1.conda
-  sha256: 7d7f6df998b8c374593e7ae9954ceba9afe29c2aa022ca84934b5be7cf6c610f
-  md5: 16b3e83e89636e555343ad3ee37a6b89
+- conda: https://prefix.dev/ship/linux-64/shipgeometry-0.2.1-hb0f4dca_3.conda
+  sha256: c9699df7347d670cc366027959094ae3facafc3d3089ffcf47d5fad3e0936c4e
+  md5: 06e252bd30b944fa69d0c6f961c19f1e
   depends:
-  - libstdcxx >=15
-  - libgcc >=15
+  - libstdcxx >=16
+  - libgcc >=16
   - __glibc >=2.17,<3.0.a0
+  - libsqlite >=3.53.4,<4.0a0
+  - geomodel-tools >=6.31.0,<6.32.0a0
   - eigen-abi >=5.0.1.80,<5.0.1.81.0a0
-  - libsqlite >=3.53.2,<4.0a0
-  - geomodel-tools >=6.27.0,<6.28.0a0
-  - geomodel-core >=6.27.0,<6.28.0a0
+  - geomodel-core >=6.31.0,<6.32.0a0
   license: LGPL-3.0-or-later
   run_exports:
     weak:
     - shipgeometry >=0.2.1,<0.3.0a0
-  size: 366710
-  timestamp: 1782460390870
-- conda: https://prefix.dev/ship/linux-64/shipgeometryservice-0.3.0-hb0f4dca_0.conda
-  sha256: c5a9c01f63a8590c18c2e64bec1151d3aa2e8d745071d159d333da8fd7085bc8
-  md5: cc4de979bf697311c4aa6f4871c303a8
+  size: 367435
+  timestamp: 1786436182467
+- conda: https://prefix.dev/ship/linux-64/shipgeometryservice-0.4.0-hb0f4dca_1.conda
+  sha256: dd426dc36db15fa075a8e8f5eb3232a9b276fbb1d04344aa2d6d7430923b58a9
+  md5: cefd9af56a9e066e27f8cc3fd38b875d
   depends:
+  - libstdcxx >=16
+  - libgcc >=16
   - __glibc >=2.17,<3.0.a0
-  - libstdcxx >=15
-  - libgcc >=15
-  - geomodel-core >=6.27.0,<6.28.0a0
-  - geomodel-g4 >=6.27.0,<6.28.0a0
-  - mp-units >=2.5.0,<2.6.0a0
   - geant4 >=11.4.2,<11.4.3.0a0
+  - geomodel-g4 >=6.31.0,<6.32.0a0
+  - libfreetype >=2.14.3
+  - libfreetype6 >=2.14.3
+  - libexpat >=2.8.1,<3.0a0
+  - mp-units >=2.5.0,<2.6.0a0
   - shipgeometry >=0.2.1,<0.3.0a0
   - eigen-abi >=5.0.1.80,<5.0.1.81.0a0
+  - libzlib >=1.3.2,<2.0a0
+  - geomodel-core >=6.31.0,<6.32.0a0
   license: LGPL-3.0-or-later
   run_exports:
     weak:
-    - shipgeometryservice >=0.3.0,<0.4.0a0
-  size: 54541
-  timestamp: 1784537686495
+    - shipgeometryservice >=0.4.0,<0.5.0a0
+  size: 60529
+  timestamp: 1788790159530
 - conda: https://prefix.dev/ship/noarch/genie-data-3.06.02-h4616a5c_0.conda
   sha256: 3420dad73db3c74d6a1ddda9fcdc6c3a1958ec97874818ba0d924fa4fdc0ec74
   md5: 98a97c57f8ff1b2f6bd6fea7809e0598
@@ -7697,6 +7803,17 @@ packages:
   run_exports: {}
   size: 44148
   timestamp: 1781443807524
+- conda: https://prefix.dev/ship/noarch/ship-random-0.2.0-h4616a5c_0.conda
+  sha256: a276e44259ca9de018da31229e773a97099e02d2688ce8752f10530b4a54b1c6
+  md5: 900d6717c365e803ceaf2669833242fc
+  depends:
+  - random123
+  license: LGPL-3.0-or-later
+  run_exports:
+    weak:
+    - ship-random >=0.2.0,<0.3.0a0
+  size: 15592
+  timestamp: 1791207688242
 - pypi: https://files.pythonhosted.org/packages/1f/24/d78b534075bfc9cf51b555c7d180ff516636b83e42565263dc84b8f4b794/gersemi-0.27.7-cp314-cp314-manylinux_2_28_x86_64.whl
   name: gersemi
   version: 0.27.7
