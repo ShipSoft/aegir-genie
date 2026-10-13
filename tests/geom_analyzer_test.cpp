@@ -287,6 +287,9 @@ void test_max_path_lengths() {
 
   // Without a scanner flux the scan must refuse to run (the box-scan
   // fallback of ROOTGeomAnalyzer is deliberately not implemented).
+  // Only one G4RayScanner may hold the geometry closed at a time, so drop
+  // the first analyzer before building the second.
+  analyzer.reset();
   auto bare = make_analyzer("C");
   try {
     bare->ComputeMaxPathLengths();
