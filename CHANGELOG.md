@@ -2,6 +2,47 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.0] - 2026-10-14
+
+### Features
+
+- [**breaking**] Require phlex 0.4.1
+
+### Bug fixes
+
+- Point activate.sh GENIE fallback at the default environment
+- Clone the gsimple meta tree into the output file
+- Guard the GENIE fallback against an unset CONDA_PREFIX
+- Let a failed git diff fail the clang-tidy-diff task
+- Publish the event header from genie_source
+
+### Refactor
+
+- Cache the inverse placement rotation
+- Use aegir's installed generator-source helper
+- Take PhiloxRng from ship-random
+
+### Documentation
+
+- Adopt AI policy
+- Gsimple event sequence depends on the maxpl cache state
+- The gsimple cache-building run is itself the shifted sequence
+- Describe what the clang-tidy gate actually does, and fix the local check
+- Drop the in-process chain limitation fixed by #13
+- Drop notes that only record history
+
+### Testing
+
+- *(geom_analyzer)* Drop one analyzer before building the next
+
+### Miscellaneous
+
+- Grant config-sync job explicit permissions
+- Gate merges on uniform aggregator checks
+- Sync shared configs
+- Check C++ against the Core Guidelines with clang-tidy
+- Update pixi lock file
+
 ## [0.2.0] - 2026-07-25
 
 ### Features
