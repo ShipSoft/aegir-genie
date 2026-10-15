@@ -14,7 +14,9 @@ requires-pixi = ">=0.68"
 
 [dependencies]
 # SHiP/HEP packages (prefix.dev/ship + conda-forge)
-shipdatamodel = "*"
+# <0.6: 0.6 renamed the field names to snake_case; genie_source still uses
+# the camelCase names.
+shipdatamodel = "<0.6"
 phlex = ">=0.4.1"
 # aegir/mc_particle_source.hpp (aegir::source_helper), installed by aegir
 # since 0.4.
