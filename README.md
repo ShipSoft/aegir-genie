@@ -56,7 +56,7 @@ plugin.
 | `gevgen_ship` app | validated against `gevgen_fnal` on identical inputs — see [docs/validation.md](docs/validation.md) |
 | `ShipFluxDriver` (flux-file reading, unit conversions, exposure accounting) | works, unit-tested (`pixi run test`) |
 | event generation (`GMCJDriver::GenerateEvent`) | works; embedded and `gevgen_ship` paths verified content-identical (incl. full geometry) |
-| packaged cross-section splines | `genie-splines-ship` on prefix.dev/ship (production build; averaged-A extension from build 101) |
+| packaged cross-section splines | `genie-splines-ship` on prefix.dev/ship-experiment/stable (production build; averaged-A extension from build 101) |
 
 ## Plugins and tools
 
