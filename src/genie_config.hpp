@@ -19,7 +19,7 @@
 #include <stdexcept>
 #include <string>
 
-namespace aegir {
+namespace SHiP::aegir::genie {
 
 // Resolve a GeoModel geometry db path: an existing path is used as-is; a
 // bare filename is looked up under $SHIPGEOMETRY_ROOT/share/geometry (the
@@ -47,7 +47,7 @@ struct GenieSourceConfig {
   std::string tune = "G18_02a_02_11b";
   std::string spline_file;  // GENIE cross-section splines (gmkspl XML output)
   std::string flux_file;    // neutrino flux file (format per flux_format)
-  // 'ship': SHiP flux ntuple, schema v1 (ShipFluxDriver);
+  // 'ship': SHiP flux ntuple, schema v1 (FluxDriver);
   // 'gsimple': GENIE GSimple flux (genie::flux::GSimpleNtpFlux) — the format
   // the SHiP neutrino group produces for gevgen_fnal.
   std::string flux_format = "ship";
@@ -117,4 +117,4 @@ struct GenieSourceConfig {
   }
 };
 
-}  // namespace aegir
+}  // namespace SHiP::aegir::genie

@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-#include "ship_flux_driver.hpp"
+#include "flux_driver.hpp"
 
 #include <ROOT/RNTupleReader.hxx>
 #include <ROOT/RNTupleView.hxx>
@@ -12,7 +12,7 @@
 #include <string>
 #include <utility>
 
-namespace aegir {
+namespace SHiP::aegir::genie {
 
 namespace {
 
@@ -30,7 +30,7 @@ constexpr double kNs2S = 1e-9;
 // reader's page source and must be destroyed before it (members destroy in
 // reverse declaration order) — hence also the two-phase construction below
 // (views created first, reader moved in afterwards).
-struct ShipFluxDriver::Reader {
+struct FluxDriver::Reader {
   std::unique_ptr<ROOT::RNTupleReader> flux;
   ROOT::RNTupleView<std::int32_t> pdg;
   ROOT::RNTupleView<double> vx, vy, vz, t;
@@ -38,8 +38,8 @@ struct ShipFluxDriver::Reader {
   ROOT::RNTupleView<double> weight;
 };
 
-ShipFluxDriver::ShipFluxDriver(std::string const& path, bool cycle)
-    : genie::flux::GFluxExposureI(genie::flux::kPOTs),
+FluxDriver::FluxDriver(std::string const& path, bool cycle)
+    : ::genie::flux::GFluxExposureI(::genie::flux::kPOTs),
       path_{path},
       cycle_{cycle} {
   // --- metadata -------------------------------------------------------------
@@ -48,12 +48,12 @@ ShipFluxDriver::ShipFluxDriver(std::string const& path, bool cycle)
     meta = ROOT::RNTupleReader::Open("flux_meta", path);
   } catch (std::exception const& e) {
     throw std::runtime_error(
-        "ship_flux_driver: cannot open RNTuple 'flux_meta' in '" + path +
+        "flux_driver: cannot open RNTuple 'flux_meta' in '" + path +
         "' — is this a SHiP neutrino flux file (docs/neutrino_flux.md)? (" +
         e.what() + ")");
   }
   if (meta->GetNEntries() != 1)
-    throw std::runtime_error("ship_flux_driver: 'flux_meta' in '" + path +
+    throw std::runtime_error("flux_driver: 'flux_meta' in '" + path +
                              "' holds " + std::to_string(meta->GetNEntries()) +
                              " entries, expected exactly 1");
   {
@@ -62,7 +62,7 @@ ShipFluxDriver::ShipFluxDriver(std::string const& path, bool cycle)
     auto max_energy = meta->GetView<double>("max_energy");
     if (version(0) != kSupportedSchemaVersion)
       throw std::runtime_error(
-          "ship_flux_driver: '" + path + "' declares schema version " +
+          "flux_driver: '" + path + "' declares schema version " +
           std::to_string(version(0)) + "; this driver supports version " +
           std::to_string(kSupportedSchemaVersion));
     pot_ = pot(0);
@@ -70,7 +70,7 @@ ShipFluxDriver::ShipFluxDriver(std::string const& path, bool cycle)
   }
   if (max_energy_ <= 0.0)
     throw std::runtime_error(
-        "ship_flux_driver: '" + path + "' declares max_energy = " +
+        "flux_driver: '" + path + "' declares max_energy = " +
         std::to_string(max_energy_) + " GeV (must be > 0)");
 
   // --- flux rays ------------------------------------------------------------
@@ -78,13 +78,12 @@ ShipFluxDriver::ShipFluxDriver(std::string const& path, bool cycle)
   try {
     flux = ROOT::RNTupleReader::Open("nu_flux", path);
   } catch (std::exception const& e) {
-    throw std::runtime_error(
-        "ship_flux_driver: cannot open RNTuple 'nu_flux' in '" + path + "' (" +
-        e.what() + ")");
+    throw std::runtime_error("flux_driver: cannot open RNTuple 'nu_flux' in '" +
+                             path + "' (" + e.what() + ")");
   }
   n_entries_ = flux->GetNEntries();
   if (n_entries_ == 0)
-    throw std::runtime_error("ship_flux_driver: '" + path +
+    throw std::runtime_error("flux_driver: '" + path +
                              "' contains no flux entries");
 
   try {
@@ -104,7 +103,7 @@ ShipFluxDriver::ShipFluxDriver(std::string const& path, bool cycle)
     reader_->flux = std::move(flux);
   } catch (std::exception const& e) {
     throw std::runtime_error(
-        "ship_flux_driver: field missing from 'nu_flux' in '" + path +
+        "flux_driver: field missing from 'nu_flux' in '" + path +
         "' — schema v1 requires pdg, vx, vy, vz, t, px, py, pz, weight (" +
         e.what() + ")");
   }
@@ -117,14 +116,14 @@ ShipFluxDriver::ShipFluxDriver(std::string const& path, bool cycle)
   for (std::uint64_t i = 0; i < n_entries_; ++i)
     total_weight_ += reader_->weight(i);
   if (!(total_weight_ > 0.0))
-    throw std::runtime_error("ship_flux_driver: flux weights in '" + path +
+    throw std::runtime_error("flux_driver: flux weights in '" + path +
                              "' sum to " + std::to_string(total_weight_) +
                              " (must be > 0)");
 }
 
-ShipFluxDriver::~ShipFluxDriver() = default;
+FluxDriver::~FluxDriver() = default;
 
-genie::PDGCodeList const& ShipFluxDriver::FluxParticles() {
+::genie::PDGCodeList const& FluxDriver::FluxParticles() {
   if (!pdg_list_built_) {
     // One scan over the (columnar, compressed) pdg field; deduplicate first
     // so PDGCodeList's PDG-library validation runs once per flavour.
@@ -141,7 +140,7 @@ genie::PDGCodeList const& ShipFluxDriver::FluxParticles() {
         if (!pdg_list_.ExistsInPDGCodeList(code))
           dropped += (dropped.empty() ? "" : ", ") + std::to_string(code);
       throw std::runtime_error(
-          "ship_flux_driver: '" + path_ +
+          "flux_driver: '" + path_ +
           "' contains PDG code(s) unknown to GENIE's PDGLibrary: " + dropped);
     }
     pdg_list_built_ = true;
@@ -149,7 +148,7 @@ genie::PDGCodeList const& ShipFluxDriver::FluxParticles() {
   return pdg_list_;
 }
 
-bool ShipFluxDriver::GenerateNext() {
+bool FluxDriver::GenerateNext() {
   if (end_) return false;
   auto next = static_cast<std::uint64_t>(index_ + 1);
   if (next >= n_entries_) {
@@ -177,7 +176,7 @@ bool ShipFluxDriver::GenerateNext() {
   return true;
 }
 
-ShipFluxDriver::Ray ShipFluxDriver::peek_first_ray() {
+FluxDriver::Ray FluxDriver::peek_first_ray() {
   auto& r = *reader_;  // RNTupleView::operator() is non-const
   Ray ray;
   ray.pdg = r.pdg(0);
@@ -190,7 +189,7 @@ ShipFluxDriver::Ray ShipFluxDriver::peek_first_ray() {
   return ray;
 }
 
-void ShipFluxDriver::Clear(Option_t* /*opt*/) {
+void FluxDriver::Clear(Option_t* /*opt*/) {
   // Reset the driver state: rewind to the start of the file and drop the
   // accumulated exposure. GMCJDriver / ROOTGeomAnalyzer call this with
   // option "CycleHistory" after the max-path-length flux scan, precisely so
@@ -201,7 +200,7 @@ void ShipFluxDriver::Clear(Option_t* /*opt*/) {
   used_weight_ = 0.0;
 }
 
-void ShipFluxDriver::GenerateWeighted(bool gen_weighted) {
+void FluxDriver::GenerateWeighted(bool gen_weighted) {
   // The rays in the file are inherently weighted (merged samples with
   // different POT equivalents). Unweighted generation would need an
   // accept–reject on the weight; until that is implemented, Weight() always
@@ -210,7 +209,7 @@ void ShipFluxDriver::GenerateWeighted(bool gen_weighted) {
   gen_weighted_ = gen_weighted;
 }
 
-double ShipFluxDriver::GetTotalExposure() const {
+double FluxDriver::GetTotalExposure() const {
   // The whole file corresponds to pot_ protons on target; scale by the
   // fraction of the total statistical weight consumed (for uniform weights
   // this reduces to the entry-count fraction). Cycling accumulates
@@ -218,4 +217,4 @@ double ShipFluxDriver::GetTotalExposure() const {
   return pot_ * used_weight_ / total_weight_;
 }
 
-}  // namespace aegir
+}  // namespace SHiP::aegir::genie

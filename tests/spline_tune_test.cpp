@@ -20,6 +20,8 @@
 
 namespace {
 
+using SHiP::aegir::genie::spline_file_tune;
+
 int failures = 0;
 
 void check(bool ok, std::string const& what) {
@@ -55,21 +57,20 @@ int main() {
         "<genie_xsec_spline_list version=\"3.00\" uselog=\"1\">\n\n"
         "  <genie_tune name=\"G18_02a_02_11b\">\n\n"
         "    <spline name=\"...\" nknots=\"250\">\n");
-  check(
-      aegir::spline_file_tune((dir / "tuned.xml").string()) == "G18_02a_02_11b",
-      "tune name read from a gmkspl-style header");
+  check(spline_file_tune((dir / "tuned.xml").string()) == "G18_02a_02_11b",
+        "tune name read from a gmkspl-style header");
 
   write(dir / "untuned.xml",
         "<?xml version=\"1.0\"?>\n<genie_xsec_spline_list version=\"2.00\">\n"
         "  <spline name=\"...\">\n");
-  check(aegir::spline_file_tune((dir / "untuned.xml").string()).empty(),
+  check(spline_file_tune((dir / "untuned.xml").string()).empty(),
         "empty for a header without a genie_tune tag");
 
   write(dir / "compressed.xml.gz", std::string("\x1f\x8b") + "binary junk");
-  check(aegir::spline_file_tune((dir / "compressed.xml.gz").string()).empty(),
+  check(spline_file_tune((dir / "compressed.xml.gz").string()).empty(),
         "empty for gzip-compressed files (not sniffed)");
 
-  check(aegir::spline_file_tune((dir / "missing.xml").string()).empty(),
+  check(spline_file_tune((dir / "missing.xml").string()).empty(),
         "empty for a missing file");
 
   std::filesystem::remove_all(dir);

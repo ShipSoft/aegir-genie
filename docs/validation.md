@@ -10,7 +10,7 @@ SPDX-License-Identifier: LGPL-3.0-or-later
 > previous geometry path (GDML imported into TGeo via GENIE's
 > `ROOTGeomAnalyzer`, on the FairShip/TGeo-exported production GDML). The
 > generator now analyzes the GeoModel-built Geant4 geometry directly
-> (`ShipGeomAnalyzer`); the target-nucleus derivation (averaged-A ion per
+> (`GeomAnalyzer`); the target-nucleus derivation (averaged-A ion per
 > element) is unchanged. Max-path-lengths caches produced for the GDML
 > geometry are invalid and must be regenerated, and the statistical battery
 > below should be repeated on the GeoModel geometry once production inputs

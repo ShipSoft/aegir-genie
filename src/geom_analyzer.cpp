@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-#include "ship_geom_analyzer.hpp"
+#include "geom_analyzer.hpp"
 
 #include <CLHEP/Units/SystemOfUnits.h>
 #include <TMath.h>
@@ -29,45 +29,45 @@
 #include "Framework/EventGen/GFluxI.h"
 #include "Framework/Numerical/RandomGen.h"
 #include "Framework/ParticleData/PDGUtils.h"
-#include "GeometryService/G4RayScanner.h"
-#include "GeometryService/GeometryThread.h"
-#include "GeometryService/IGeometryService.h"
+#include "SHiP/GeometryService/G4RayScanner.h"
+#include "SHiP/GeometryService/GeometryThread.h"
+#include "SHiP/GeometryService/IGeometryService.h"
 
-namespace aegir {
+namespace SHiP::aegir::genie {
 
 namespace {
 
 // The process-wide Geant4 geometry thread (shared with every other Geant4
 // geometry user, e.g. aegir's geant4_module in the full chain):
 // only a single thread per process may create Geant4 geometry.
-using ship::geometry_thread;
+using SHiP::geometry_thread;
 
 // One target nucleus per element, averaged-A — exactly what ROOTGeomAnalyzer
 // derives from a TGeo mixture element, so the genie-splines-ship target list
 // stays valid (natural Cu -> Cu-64, Ni -> Ni-59, ...).
 int target_pdg(G4Element const& element) {
-  return genie::pdg::IonPdgCode(TMath::Nint(element.GetN()),
-                                element.GetZasInt());
+  return ::genie::pdg::IonPdgCode(TMath::Nint(element.GetN()),
+                                  element.GetZasInt());
 }
 
 }  // namespace
 
-struct ShipGeomAnalyzer::Impl {
+struct GeomAnalyzer::Impl {
   // Density x mass fraction per target nucleus, in SI kg/m3 — multiplied by
   // the traversal length in m this yields the kg/m2 path lengths GENIE
   // expects from an SI-configured analyzer.
   using TargetWeights = std::vector<std::pair<int, double>>;
 
-  G4Teardown teardown;
+  G4Teardown teardown{G4Teardown::kLeaveToProcess};
   // Shared with any other user of the same geometry file (aegir's geometry
   // provider in the full phlex chain gets the same instance via
-  // SHiPGeometryService::sharedFromFile) and held for the analyzer's
+  // GeometryService::sharedFromFile) and held for the analyzer's
   // lifetime: GeoModel2G4's Geo2G4LVFactory caches converted volumes in
   // function-static maps keyed by GeoModel *pointers*, so freeing the
   // GeoModel tree lets a later conversion in the same process hit stale
   // cache entries when allocations reuse the freed addresses.
-  std::shared_ptr<ship::IGeometryService> geometry;
-  std::unique_ptr<ship::G4RayScanner> scanner;
+  std::shared_ptr<SHiP::IGeometryService> geometry;
+  std::unique_ptr<SHiP::G4RayScanner> scanner;
   std::map<G4Material const*, TargetWeights> weights;
 
   // Placement of the scan volume in the master (flux) frame:
@@ -80,7 +80,7 @@ struct ShipGeomAnalyzer::Impl {
   // after ComputePathLengths with the same arguments).
   TLorentzVector last_x, last_p;
   bool have_scan = false;
-  ship::RayScan scan;            // segments in mm, top frame
+  SHiP::RayScan scan;            // segments in mm, top frame
   G4ThreeVector scan_origin;     // ray origin, mm, top frame
   G4ThreeVector scan_direction;  // unit vector, top frame
 
@@ -127,7 +127,7 @@ void collect_materials(G4LogicalVolume const* lv,
 // Runs on the geometry thread; shared by the destructor and the
 // constructor's failure path (a throw during geometry validation must not
 // leave live Geant4 state behind either).
-void ShipGeomAnalyzer::teardown_geant4(Impl& impl) {
+void GeomAnalyzer::teardown_geant4(Impl& impl) {
   impl.scanner.reset();
   if (impl.teardown == G4Teardown::kCleanStores) {
     // Nothing else in this process tears Geant4 down: empty the stores on
@@ -143,9 +143,8 @@ void ShipGeomAnalyzer::teardown_geant4(Impl& impl) {
   impl.geometry.reset();
 }
 
-ShipGeomAnalyzer::ShipGeomAnalyzer(
-    std::shared_ptr<ship::IGeometryService> geometry,
-    std::string const& top_volume, G4Teardown teardown)
+GeomAnalyzer::GeomAnalyzer(std::shared_ptr<SHiP::IGeometryService> geometry,
+                           std::string const& top_volume, G4Teardown teardown)
     : impl_{std::make_unique<Impl>()} {
   impl_->teardown = teardown;
 
@@ -160,30 +159,32 @@ ShipGeomAnalyzer::ShipGeomAnalyzer(
     }
   });
 
-  path_lengths_ = genie::PathLengthList{targets_};
-  max_path_lengths_ = genie::PathLengthList{targets_};
+  path_lengths_ = ::genie::PathLengthList{targets_};
+  max_path_lengths_ = ::genie::PathLengthList{targets_};
 }
 
 // Geometry-thread half of the constructor.
-void ShipGeomAnalyzer::init(std::shared_ptr<ship::IGeometryService> geometry,
-                            std::string const& top_volume) {
+// Its size predates the namespace move; splitting it is separate work.
+// NOLINTNEXTLINE(readability-function-size)
+void GeomAnalyzer::init(std::shared_ptr<SHiP::IGeometryService> geometry,
+                        std::string const& top_volume) {
   auto* world = geometry->geant4WorldLogical();
   auto* top = world;
   if (!top_volume.empty()) {
     top = geometry->getLogicalVolume(top_volume);
     if (!top)
-      throw std::runtime_error("ShipGeomAnalyzer: top_volume '" + top_volume +
+      throw std::runtime_error("GeomAnalyzer: top_volume '" + top_volume +
                                "' not found in the converted Geant4 geometry");
     if (top != world) {
       std::vector<std::pair<G4RotationMatrix, G4ThreeVector>> placements;
       find_placements(world, top, G4RotationMatrix{}, G4ThreeVector{},
                       placements);
       if (placements.empty())
-        throw std::runtime_error("ShipGeomAnalyzer: top_volume '" + top_volume +
+        throw std::runtime_error("GeomAnalyzer: top_volume '" + top_volume +
                                  "' is not placed in the world");
       if (placements.size() > 1)
         throw std::runtime_error(
-            "ShipGeomAnalyzer: top_volume '" + top_volume + "' is placed " +
+            "GeomAnalyzer: top_volume '" + top_volume + "' is placed " +
             std::to_string(placements.size()) +
             " times — the flux-frame mapping would be ambiguous");
       impl_->rotation = placements.front().first;
@@ -192,7 +193,7 @@ void ShipGeomAnalyzer::init(std::shared_ptr<ship::IGeometryService> geometry,
     }
   }
   impl_->geometry = std::move(geometry);  // see Impl::geometry
-  impl_->scanner = std::make_unique<ship::G4RayScanner>(top);
+  impl_->scanner = std::make_unique<SHiP::G4RayScanner>(top);
 
   // Material -> per-target SI weights, and the target-nucleus list.
   std::set<G4Material const*> materials;
@@ -231,11 +232,11 @@ void ShipGeomAnalyzer::init(std::shared_ptr<ship::IGeometryService> geometry,
   extents_ = Extents{min_m, max_m};
 }
 
-ShipGeomAnalyzer::~ShipGeomAnalyzer() {
+GeomAnalyzer::~GeomAnalyzer() {
   geometry_thread().run([this] { teardown_geant4(*impl_); });
 }
 
-genie::PathLengthList const& ShipGeomAnalyzer::ComputePathLengths(
+::genie::PathLengthList const& GeomAnalyzer::ComputePathLengths(
     TLorentzVector const& x, TLorentzVector const& p) {
   // Flux frame: SI meters (GFluxI contract) -> mm -> top-volume frame.
   G4ThreeVector const origin_master{x.X() * 1e3, x.Y() * 1e3, x.Z() * 1e3};
@@ -261,10 +262,10 @@ genie::PathLengthList const& ShipGeomAnalyzer::ComputePathLengths(
   return path_lengths_;
 }
 
-genie::PathLengthList const& ShipGeomAnalyzer::ComputeMaxPathLengths() {
+::genie::PathLengthList const& GeomAnalyzer::ComputeMaxPathLengths() {
   if (!scanner_flux_)
     throw std::runtime_error(
-        "ShipGeomAnalyzer: SetScannerFlux must be called before "
+        "GeomAnalyzer: SetScannerFlux must be called before "
         "ComputeMaxPathLengths — the flux scan is the only supported "
         "max-path-lengths strategy");
   max_path_lengths_.SetAllToZero();
@@ -273,7 +274,7 @@ genie::PathLengthList const& ShipGeomAnalyzer::ComputeMaxPathLengths() {
     // exit — also when a scan throws — so they never count towards the
     // delivered POT (as ROOTGeomAnalyzer does).
     struct ClearCycleHistory {
-      genie::GFluxI* flux;
+      ::genie::GFluxI* flux;
       ~ClearCycleHistory() { flux->Clear("CycleHistory"); }
     } const guard{scanner_flux_};
     for (int i = 0; i < scanner_particles_; ++i) {
@@ -290,15 +291,15 @@ genie::PathLengthList const& ShipGeomAnalyzer::ComputeMaxPathLengths() {
   return max_path_lengths_;
 }
 
-TVector3 const& ShipGeomAnalyzer::GenerateVertex(TLorentzVector const& x,
-                                                 TLorentzVector const& p,
-                                                 int tgtpdg) {
+TVector3 const& GeomAnalyzer::GenerateVertex(TLorentzVector const& x,
+                                             TLorentzVector const& p,
+                                             int tgtpdg) {
   if (!impl_->have_scan || impl_->last_x != x || impl_->last_p != p)
     ComputePathLengths(x, p);
 
   // Weight per segment for this target: 0 in materials that do not contain
   // it. Units cancel in the ratio, so plain mm x (kg/m3) suffices here.
-  auto segment_weight = [this, tgtpdg](ship::RaySegment const& segment) {
+  auto const segment_weight = [this, tgtpdg](SHiP::RaySegment const& segment) {
     double weight = 0.;
     for (auto const& [pdg, w] : impl_->weights.at(segment.material))
       if (pdg == tgtpdg) weight += w;
@@ -310,14 +311,14 @@ TVector3 const& ShipGeomAnalyzer::GenerateVertex(TLorentzVector const& x,
     total += segment_weight(segment);
   if (total <= 0.)
     throw std::runtime_error(
-        "ShipGeomAnalyzer: GenerateVertex called for target " +
+        "GeomAnalyzer: GenerateVertex called for target " +
         std::to_string(tgtpdg) +
         " with zero path length on the current ray — GMCJDriver should only "
         "request targets seen by ComputePathLengths");
 
   // Uniform in the density-weighted path of this target along the ray
   // (mirrors ROOTGeomAnalyzer, including the RndGeom stream).
-  double const r = genie::RandomGen::Instance()->RndGeom().Rndm() * total;
+  double const r = ::genie::RandomGen::Instance()->RndGeom().Rndm() * total;
   double distance = impl_->scan.entry;  // mm from the ray origin
   double accumulated = 0.;
   double last_target_end = distance;  // end of the last target-bearing segment
@@ -343,4 +344,4 @@ TVector3 const& ShipGeomAnalyzer::GenerateVertex(TLorentzVector const& x,
   return vertex_;
 }
 
-}  // namespace aegir
+}  // namespace SHiP::aegir::genie

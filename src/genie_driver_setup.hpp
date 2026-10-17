@@ -21,7 +21,7 @@
 #include <string>
 
 #include "genie_config.hpp"
-#include "ship_geom_analyzer.hpp"
+#include "geom_analyzer.hpp"
 
 namespace genie {
 class EventRecord;
@@ -32,22 +32,22 @@ class GFluxExposureI;
 }
 }  // namespace genie
 
-namespace aegir {
+namespace SHiP::aegir::genie {
 
 // The assembled MC-job machinery. GMCJDriver only borrows the flux driver
 // and geometry analyzer, so the bundle owns all three; keep it alive for as
 // long as events are generated. The flux driver is either an
-// aegir::ShipFluxDriver (flux_format 'ship') or a
+// FluxDriver (flux_format 'ship') or a
 // genie::flux::GSimpleNtpFlux ('gsimple'); consumers should use the GFluxI /
 // GFluxExposureI interfaces where possible.
 struct GenieDriverBundle {
-  std::unique_ptr<ShipGeomAnalyzer> geom;
-  std::unique_ptr<genie::GFluxI> flux;
-  std::unique_ptr<genie::GMCJDriver> driver;
+  std::unique_ptr<GeomAnalyzer> geom;
+  std::unique_ptr<::genie::GFluxI> flux;
+  std::unique_ptr<::genie::GMCJDriver> driver;
 
   // Exposure/POT accounting view of the flux driver (both implementations
   // provide it); nullptr only if a future driver does not.
-  genie::flux::GFluxExposureI* exposure() const;
+  ::genie::flux::GFluxExposureI* exposure() const;
 
   // Out of line: the members' types are incomplete here.
   GenieDriverBundle();
@@ -57,21 +57,21 @@ struct GenieDriverBundle {
 };
 
 // Validates the config and assembles a fully Configure()d GMCJDriver:
-// tune -> Messenger -> RandGen -> splines -> GeoModel/ShipGeomAnalyzer ->
+// tune -> Messenger -> RandGen -> splines -> GeoModel/GeomAnalyzer ->
 // cycling flux driver -> GMCJDriver (UseSplines, ForceSingleProbScale,
 // KeepOnThrowingFluxNeutrinos), with optional XML caching of the expensive
 // max-path-lengths geometry scan. Logs the first flux ray and the geometry
 // bounding box at startup so coordinate-frame mismatches are visible
 // immediately. `context` prefixes error messages (e.g. "genie_source",
 // "gevgen_ship"). `teardown` chooses who cleans the Geant4 stores at the end
-// (see ShipGeomAnalyzer::G4Teardown); standalone apps with no other Geant4
+// (see GeomAnalyzer::G4Teardown); standalone apps with no other Geant4
 // user must pass kCleanStores.
 //
 // GENIE is a web of unsynchronized singletons: call this once per process.
 GenieDriverBundle make_genie_driver(
     GenieSourceConfig const& cfg, std::string const& context,
-    ShipGeomAnalyzer::G4Teardown teardown =
-        ShipGeomAnalyzer::G4Teardown::kLeaveToProcess);
+    GeomAnalyzer::G4Teardown teardown =
+        GeomAnalyzer::G4Teardown::kLeaveToProcess);
 
 // The tune name recorded in a gmkspl spline XML's <genie_tune name="...">
 // header, or an empty string when none is found (also for gzip-compressed
@@ -99,7 +99,7 @@ void reseed_event(long base_seed, std::uint32_t event_number);
 // Debug aid: when the AEGIR_GENIE_RNG_TRACE environment variable is set,
 // reseed_event and trace_event print per-event RNG/flux/vertex state to
 // stderr, so the plugin and app paths can be diffed line by line.
-void trace_event(std::uint32_t event_number, genie::EventRecord const& event,
-                 genie::GFluxI& flux);
+void trace_event(std::uint32_t event_number, ::genie::EventRecord const& event,
+                 ::genie::GFluxI& flux);
 
-}  // namespace aegir
+}  // namespace SHiP::aegir::genie

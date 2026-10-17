@@ -24,13 +24,13 @@
 #include "Framework/Numerical/RandomGen.h"
 #include "Framework/Utils/AppInit.h"
 #include "Framework/Utils/RunOpt.h"
-#include "GeometryService/SHiPGeometryService.h"
+#include "SHiP/GeometryService/GeometryService.h"
 #include "Tools/Flux/GFluxExposureI.h"
 #include "Tools/Flux/GSimpleNtpFlux.h"
-#include "ship_flux_driver.hpp"
-#include "ship_geom_analyzer.hpp"
+#include "flux_driver.hpp"
+#include "geom_analyzer.hpp"
 
-namespace aegir {
+namespace SHiP::aegir::genie {
 
 namespace {
 
@@ -42,18 +42,18 @@ constexpr std::uint32_t kGenieStream = 0x47454E49;  // "GENI"
 // contract) next to the scan volume's bounding box in the same frame and
 // units, so coordinate-frame or unit mismatches between flux file and
 // geometry are visible immediately.
-void log_frame_check(GenieSourceConfig const& cfg, ShipGeomAnalyzer const& geom,
-                     genie::GFluxI& flux) {
+void log_frame_check(GenieSourceConfig const& cfg, GeomAnalyzer const& geom,
+                     ::genie::GFluxI& flux) {
   double x = 0, y = 0, z = 0, e = 0;
   int pdg = 0;
-  if (auto* ship = dynamic_cast<aegir::ShipFluxDriver*>(&flux)) {
+  if (auto* ship = dynamic_cast<FluxDriver*>(&flux)) {
     auto const first = ship->peek_first_ray();
     x = first.position.X();
     y = first.position.Y();
     z = first.position.Z();
     e = first.momentum.E();
     pdg = first.pdg;
-  } else if (auto* gs = dynamic_cast<genie::flux::GSimpleNtpFlux*>(&flux)) {
+  } else if (auto* gs = dynamic_cast<::genie::flux::GSimpleNtpFlux*>(&flux)) {
     // Reading the chain fills the driver's current-entry buffer; harmless,
     // because the driver re-reads whatever entry it needs on GenerateNext.
     gs->GetFluxTChain()->GetEntry(0);
@@ -83,8 +83,8 @@ GenieDriverBundle& GenieDriverBundle::operator=(GenieDriverBundle&&) noexcept =
     default;
 GenieDriverBundle::~GenieDriverBundle() = default;
 
-genie::flux::GFluxExposureI* GenieDriverBundle::exposure() const {
-  return dynamic_cast<genie::flux::GFluxExposureI*>(flux.get());
+::genie::flux::GFluxExposureI* GenieDriverBundle::exposure() const {
+  return dynamic_cast<::genie::flux::GFluxExposureI*>(flux.get());
 }
 
 std::string spline_file_tune(std::string const& path) {
@@ -115,11 +115,11 @@ std::string spline_file_tune(std::string const& path) {
 
 GenieDriverBundle make_genie_driver(GenieSourceConfig const& cfg,
                                     std::string const& context,
-                                    ShipGeomAnalyzer::G4Teardown teardown) {
+                                    GeomAnalyzer::G4Teardown teardown) {
   cfg.validate(context);
 
   // 1. Tune selection — before any access to PDGLibrary or AlgFactory.
-  auto* run_opt = genie::RunOpt::Instance();
+  auto* run_opt = ::genie::RunOpt::Instance();
   run_opt->SetTuneName(cfg.tune);
   if (!run_opt->Tune())
     throw std::runtime_error(context + ": tune '" + cfg.tune +
@@ -128,10 +128,10 @@ GenieDriverBundle make_genie_driver(GenieSourceConfig const& cfg,
 
   // 2. Tame GENIE's logging (ships with the GENIE config files; resolved
   //    via $GENIE/config).
-  genie::utils::app_init::MesgThresholds("Messenger_whisper.xml");
+  ::genie::utils::app_init::MesgThresholds("Messenger_whisper.xml");
 
   // 3. Base RNG seed; callers re-seed per event via reseed_event().
-  genie::utils::app_init::RandGen(cfg.seed);
+  ::genie::utils::app_init::RandGen(cfg.seed);
 
   // 4. Cross-section splines. XSecTable exit()s the process when the file
   //    is unusable, so cfg.validate() checked its existence up front. A
@@ -148,17 +148,17 @@ GenieDriverBundle make_genie_driver(GenieSourceConfig const& cfg,
         "(days of CPU). Use matching splines, or set tune '" +
         file_tune +
         "' (the packaged genie-splines-ship is G18_02a_02_11b only)");
-  genie::utils::app_init::XSecTable(cfg.spline_file, true);
+  ::genie::utils::app_init::XSecTable(cfg.spline_file, true);
 
   GenieDriverBundle bundle;
 
   // 5. Geometry: the same GeoModel db the Geant4 side tracks through,
-  //    converted to Geant4 and analyzed directly (ShipGeomAnalyzer works in
+  //    converted to Geant4 and analyzed directly (GeomAnalyzer works in
   //    SI, no unit configuration needed). sharedFromFile hands aegir's
   //    geometry provider the same instance in the full in-process chain, so
   //    the geometry is loaded and converted exactly once.
-  bundle.geom = std::make_unique<ShipGeomAnalyzer>(
-      ship::SHiPGeometryService::sharedFromFile(
+  bundle.geom = std::make_unique<GeomAnalyzer>(
+      SHiP::GeometryService::sharedFromFile(
           resolve_geometry_file(cfg.geometry_file, context)),
       cfg.top_volume, teardown);
 
@@ -177,7 +177,7 @@ GenieDriverBundle make_genie_driver(GenieSourceConfig const& cfg,
     // Weight() = 1), exactly as in gevgen_fnal, which never calls
     // SetGenWeighted. Combined with GMCJDriver::ForceSingleProbScale the
     // generated events are unweighted.
-    auto gsimple = std::make_unique<genie::flux::GSimpleNtpFlux>();
+    auto gsimple = std::make_unique<::genie::flux::GSimpleNtpFlux>();
     // The second argument is a config string for this driver (not a beam
     // location): "no-offset-index" starts at entry 0 instead of a
     // RandomGen-chosen random offset, keeping runs trivially reproducible
@@ -191,8 +191,8 @@ GenieDriverBundle make_genie_driver(GenieSourceConfig const& cfg,
     gsimple->SetNumOfCycles(0);  // 0 = recycle indefinitely (as gevgen_fnal)
     bundle.flux = std::move(gsimple);
   } else {
-    bundle.flux = std::make_unique<ShipFluxDriver>(cfg.flux_file,
-                                                   /*cycle=*/true);
+    bundle.flux = std::make_unique<FluxDriver>(cfg.flux_file,
+                                               /*cycle=*/true);
   }
 
   log_frame_check(cfg, *bundle.geom, *bundle.flux);
@@ -210,7 +210,7 @@ GenieDriverBundle make_genie_driver(GenieSourceConfig const& cfg,
   // max_path_lengths_file depends on the flux as well as the geometry —
   // regenerate it when either changes.
   //
-  // Flux read position after the scan: ShipFluxDriver::Clear also rewinds to
+  // Flux read position after the scan: FluxDriver::Clear also rewinds to
   // entry 0, so for flux_format 'ship' event generation consumes the same
   // ray sequence whether the scan ran or a cached file was loaded. GENIE's
   // GSimpleNtpFlux::Clear only resets the exposure counters and does NOT
@@ -224,7 +224,7 @@ GenieDriverBundle make_genie_driver(GenieSourceConfig const& cfg,
   bundle.geom->SetScannerFlux(bundle.flux.get());
 
   // 7. MC job driver.
-  bundle.driver = std::make_unique<genie::GMCJDriver>();
+  bundle.driver = std::make_unique<::genie::GMCJDriver>();
   bundle.driver->UseFluxDriver(bundle.flux.get());
   bundle.driver->UseGeomAnalyzer(bundle.geom.get());
   bundle.driver->UseSplines();
@@ -262,7 +262,7 @@ void reseed_event(long base_seed, std::uint32_t event_number) {
   auto const seed = 1 + static_cast<long>(rng.uniform() * 4294967294.0);
   // Reseeds GENIE's TRandom3 *and* ROOT's global gRandom (a plain global,
   // not thread-local — verified for the conda ROOT build).
-  genie::RandomGen::Instance()->SetSeed(seed);
+  ::genie::RandomGen::Instance()->SetSeed(seed);
   // Pythia6's hadronization draws come from its own Fortran RANMAR generator
   // (pyr_ in libPythia6, MRPY common block) — a hidden RNG stream that
   // RandomGen::SetSeed does not touch and whose state otherwise carries
@@ -286,11 +286,11 @@ void reseed_event(long base_seed, std::uint32_t event_number) {
   }
 }
 
-void trace_event(std::uint32_t event_number, genie::EventRecord const& event,
-                 genie::GFluxI& flux) {
+void trace_event(std::uint32_t event_number, ::genie::EventRecord const& event,
+                 ::genie::GFluxI& flux) {
   if (!std::getenv("AEGIR_GENIE_RNG_TRACE")) return;
   auto const* vtx = event.Vertex();
-  auto const* exposure = dynamic_cast<genie::flux::GFluxExposureI*>(&flux);
+  auto const* exposure = dynamic_cast<::genie::flux::GFluxExposureI*>(&flux);
   std::fprintf(stderr,
                "[rng-trace] event=%u flux_index=%ld rays_used=%ld "
                "vtx=(%.17g, %.17g, %.17g) n_entries=%d probe_pdg=%d\n",
@@ -300,4 +300,4 @@ void trace_event(std::uint32_t event_number, genie::EventRecord const& event,
                event.Particle(0) ? event.Particle(0)->Pdg() : 0);
 }
 
-}  // namespace aegir
+}  // namespace SHiP::aegir::genie

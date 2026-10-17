@@ -6,9 +6,9 @@
 //
 // Provides MCParticle vectors from GENIE neutrino interactions generated
 // in situ: a genie::GMCJDriver convolves the SHiP neutrino flux (schema-v1
-// ntuple via ShipFluxDriver, or a GENIE GSimple flux file — see the
+// ntuple via FluxDriver, or a GENIE GSimple flux file — see the
 // flux_format config key) with cross-section splines and the GeoModel
-// geometry the Geant4 simulation tracks through (via ShipGeomAnalyzer), so
+// geometry the Geant4 simulation tracks through (via GeomAnalyzer), so
 // interaction vertices are placed consistently with the tracked geometry
 // (the library-embedding approach of nutools/GENIEHelper and gSeaGen).
 //
@@ -20,7 +20,7 @@
 // gGeoManager), so this source runs with phlex::concurrency::serial and one
 // instance per process. Per-event reproducibility is preserved by reseeding
 // genie::RandomGen from a Philox-derived per-event seed (see
-// aegir::reseed_event).
+// reseed_event).
 
 #include <SHiP/MCParticle.hpp>
 #include <aegir/mc_particle_source.hpp>
@@ -42,12 +42,18 @@
 
 namespace {
 
+using SHiP::aegir::genie::GenieDriverBundle;
+using SHiP::aegir::genie::GenieSourceConfig;
+using SHiP::aegir::genie::make_genie_driver;
+using SHiP::aegir::genie::reseed_event;
+using SHiP::aegir::genie::trace_event;
+
 class GenieSource : public phlex::source {
  public:
-  GenieSource(std::string stage, aegir::GenieSourceConfig cfg)
+  GenieSource(std::string stage, GenieSourceConfig cfg)
       : stage_{std::move(stage)},
         cfg_{std::move(cfg)},
-        bundle_{aegir::make_genie_driver(cfg_, "genie_source")} {}
+        bundle_{make_genie_driver(cfg_, "genie_source")} {}
 
   // Phlex may dispatch generate() calls out of event-number order (serial
   // concurrency guarantees mutual exclusion, not FIFO — observed in practice
@@ -85,7 +91,7 @@ class GenieSource : public phlex::source {
 
   phlex::provider_bundles create_providers(
       phlex::product_selector const& selector) override {
-    return aegir::mc_particle_provider_bundles(
+    return SHiP::aegir::mc_particle_provider_bundles(
         selector, stage_,
         [this](phlex::data_cell_index const& id) { return generate(id); },
         phlex::concurrency::serial);
@@ -93,7 +99,7 @@ class GenieSource : public phlex::source {
 
  private:
   std::vector<SHiP::MCParticle> generate_in_order(std::size_t event_number) {
-    aegir::reseed_event(cfg_.seed, static_cast<std::uint32_t>(event_number));
+    reseed_event(cfg_.seed, static_cast<std::uint32_t>(event_number));
 
     std::unique_ptr<genie::EventRecord> event{bundle_.driver->GenerateEvent()};
     if (!event)
@@ -101,8 +107,8 @@ class GenieSource : public phlex::source {
           "genie_source: GMCJDriver::GenerateEvent returned no event for "
           "event " +
           std::to_string(event_number));
-    aegir::trace_event(static_cast<std::uint32_t>(event_number), *event,
-                       *bundle_.flux);
+    trace_event(static_cast<std::uint32_t>(event_number), *event,
+                *bundle_.flux);
 
     // Interaction vertex in detector coordinates, SI units (m, s); the
     // per-particle X4() positions are nuclear-scale offsets relative to the
@@ -126,31 +132,31 @@ class GenieSource : public phlex::source {
           static_cast<int>(particles.size());
 
       SHiP::MCParticle mc;
-      mc.pdgCode = p->Pdg();
+      mc.pdg_code = p->Pdg();
       mc.vertex = vertex;
       mc.momentum = {p->Px(), p->Py(), p->Pz()};  // GeV
       mc.energy = p->E();                         // GeV
       mc.time = time;
-      mc.motherId = p->FirstMother();  // remapped below
+      mc.mother_id = p->FirstMother();  // remapped below
       mc.status = 1;
       particles.push_back(mc);
     }
 
-    // Remap motherId from the full GHEP record to the emitted collection, or
+    // Remap mother_id from the full GHEP record to the emitted collection, or
     // -1 when the mother was not itself written out — the common case, since
     // mothers of final-state particles (the probe, the struck nucleus,
     // intermediate states) are generally not final state.
     for (auto& mc : particles) {
-      int const m = mc.motherId;
-      mc.motherId =
+      int const m = mc.mother_id;
+      mc.mother_id =
           (m >= 0 && m < n) ? out_index[static_cast<std::size_t>(m)] : -1;
     }
     return particles;
   }
 
   std::string stage_;
-  aegir::GenieSourceConfig cfg_;
-  aegir::GenieDriverBundle bundle_;  // initialized after cfg_ (declared last)
+  GenieSourceConfig cfg_;
+  GenieDriverBundle bundle_;  // initialized after cfg_ (declared last)
 
   // In-order generation bookkeeping (see generate()); only touched from the
   // serialized provider function, so no synchronisation is needed.
@@ -162,7 +168,7 @@ class GenieSource : public phlex::source {
 }  // namespace
 
 PHLEX_REGISTER_SOURCE(s, config) {
-  aegir::GenieSourceConfig cfg;
+  GenieSourceConfig cfg;
   cfg.tune = config.get<std::string>("tune", std::string{"G18_02a_02_11b"});
   cfg.spline_file = config.get<std::string>("splines");
   cfg.flux_file = config.get<std::string>("flux_file");
@@ -173,7 +179,7 @@ PHLEX_REGISTER_SOURCE(s, config) {
   cfg.max_path_lengths_file =
       config.get<std::string>("max_path_lengths_file", std::string{});
 
-  auto stage = aegir::source_stage(config, "genie_source");
+  auto stage = SHiP::aegir::source_stage(config, "genie_source");
 
   s.add_source<GenieSource>("genie", std::move(stage), std::move(cfg));
 }

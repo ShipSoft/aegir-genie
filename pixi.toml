@@ -14,13 +14,12 @@ requires-pixi = ">=0.68"
 
 [dependencies]
 # SHiP/HEP packages (prefix.dev/ship-experiment/stable + conda-forge)
-# <0.6: 0.6 renamed the field names to snake_case; genie_source still uses
-# the camelCase names.
-shipdatamodel = "<0.6"
+# >=0.6: snake_case field names (pdg_code, mother_id).
+shipdatamodel = ">=0.6"
 phlex = ">=0.4.1"
 # aegir/mc_particle_source.hpp (aegir::source_helper), installed by aegir
-# since 0.4.
-aegir = ">=0.4"
+# since 0.4 and declared in SHiP::aegir since 0.5.
+aegir = ">=0.5"
 root = ">=6.40"
 # phlex/shipdatamodel are C++23 — pull the matching ROOT build variant.
 root_cxx_standard = "==23"
@@ -37,11 +36,11 @@ ship-random = ">=0.2"
 libjsonnet = "*"
 # Geometry service (GeoModel-backed); the geometry analyzer navigates the
 # converted Geant4 geometry, so Geant4 is a direct dependency too.
-# >=0.3: ship::geometry_thread() and sharedFromFile, shared with aegir's
-# geant4_module. Keep in lockstep with aegir's pin — the
+# >=0.5: SHiP::geometry_thread() and SHiP::GeometryService::sharedFromFile,
+# shared with aegir's geant4_module. Keep in lockstep with aegir's pin — the
 # unversioned soname means ld.so dedups the library process-wide and the
 # first-loaded copy wins.
-shipgeometryservice = ">=0.3"
+shipgeometryservice = ">=0.5"
 geant4 = ">=11.3"
 # Required transitively by GeoModelCore's CMake config
 # (find_dependency(Eigen3)); declared explicitly because conda-forge
