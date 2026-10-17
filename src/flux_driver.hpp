@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-// ship_flux_driver.hpp — GENIE flux driver reading SHiP neutrino flux files
+// flux_driver.hpp — GENIE flux driver reading SHiP neutrino flux files
 //
 // Implements genie::GFluxI (and the GFluxExposureI extension for POT
 // accounting) on top of the SHiP neutrino-flux ntuple, schema version 1
@@ -28,10 +28,13 @@
 #include "Framework/ParticleData/PDGCodeList.h"
 #include "Tools/Flux/GFluxExposureI.h"
 
-namespace aegir {
+namespace SHiP::aegir::genie {
 
-class ShipFluxDriver : public genie::GFluxI,
-                       public genie::flux::GFluxExposureI {
+// GENIE takes a flux driver through both of its interfaces: GFluxI for
+// GMCJDriver and GFluxExposureI for the POT accounting.
+// NOLINTNEXTLINE(misc-multiple-inheritance)
+class FluxDriver : public ::genie::GFluxI,
+                   public ::genie::flux::GFluxExposureI {
  public:
   // Opens the flux file and reads its metadata; throws std::runtime_error
   // with a descriptive message if the file is missing, has no nu_flux /
@@ -39,11 +42,11 @@ class ShipFluxDriver : public genie::GFluxI,
   // With cycle = true the driver restarts from the first entry when the file
   // is exhausted (exposure keeps accumulating); with cycle = false End()
   // becomes true instead.
-  explicit ShipFluxDriver(std::string const& path, bool cycle = false);
-  ~ShipFluxDriver() override;
+  explicit FluxDriver(std::string const& path, bool cycle = false);
+  ~FluxDriver() override;
 
   // GFluxI interface
-  genie::PDGCodeList const& FluxParticles() override;
+  ::genie::PDGCodeList const& FluxParticles() override;
   double MaxEnergy() override { return max_energy_; }
   bool GenerateNext() override;
   int PdgCode() override { return pdg_; }
@@ -100,8 +103,8 @@ class ShipFluxDriver : public genie::GFluxI,
   long int n_used_ = 0;       // rays generated so far (across cycles)
   double used_weight_ = 0.0;  // Σ weight of the rays generated so far
 
-  genie::PDGCodeList pdg_list_;
+  ::genie::PDGCodeList pdg_list_;
   bool pdg_list_built_ = false;
 };
 
-}  // namespace aegir
+}  // namespace SHiP::aegir::genie

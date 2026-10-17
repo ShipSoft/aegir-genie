@@ -16,15 +16,16 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # Dependencies (from the default pixi environment)
-find_package(SHiPDataModel REQUIRED)
+# 0.6: snake_case field names (SHiP::MCParticle::pdg_code, mother_id).
+find_package(SHiPDataModel 0.6 REQUIRED)
 # Geometry service (GeoModel-backed, brings Geant4 via its public interface).
-# 0.3: ship::geometry_thread() and SHiPGeometryService::sharedFromFile, both
+# 0.5: the SHiP namespace (SHiP::GeometryService, SHiP::geometry_thread()),
 # shared with aegir's geant4_module in the full in-process chain.
-find_package(SHiPGeometryService 0.3 CONFIG REQUIRED)
+find_package(SHiPGeometryService 0.5 CONFIG REQUIRED)
 
 find_package(phlex 0.4.1 REQUIRED)
 # aegir::source_helper: the shared generator-source helper
-# (aegir/mc_particle_source.hpp).
+# (aegir/mc_particle_source.hpp), declared in SHiP::aegir since 0.5.
 find_package(aegir CONFIG REQUIRED)
 find_package(
     ROOT
@@ -184,8 +185,8 @@ add_library(
     aegir_genie_core
     OBJECT
     src/genie_driver_setup.cpp
-    src/ship_flux_driver.cpp
-    src/ship_geom_analyzer.cpp
+    src/flux_driver.cpp
+    src/geom_analyzer.cpp
 )
 set_target_properties(aegir_genie_core PROPERTIES POSITION_INDEPENDENT_CODE ON)
 target_include_directories(
@@ -194,11 +195,7 @@ target_include_directories(
 )
 target_link_libraries(
     aegir_genie_core
-    PUBLIC
-        ROOT::ROOTNTuple
-        GENIE::GENIE
-        SHiPGeometryService::SHiPGeometryService
-        SHiP::Random
+    PUBLIC ROOT::ROOTNTuple GENIE::GENIE SHiP::GeometryService SHiP::Random
 )
 
 # Phlex plugin: the embedded GENIE event generator source.

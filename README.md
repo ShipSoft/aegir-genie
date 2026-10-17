@@ -54,7 +54,7 @@ plugin.
 | `pixi install` | works |
 | `genie_source` plugin | full chain (GENIE → Geant4 → output) validated on the production SHiP geometry; runs in one process — the geometry is shared with `geant4_module` and converted once |
 | `gevgen_ship` app | validated against `gevgen_fnal` on identical inputs — see [docs/validation.md](docs/validation.md) |
-| `ShipFluxDriver` (flux-file reading, unit conversions, exposure accounting) | works, unit-tested (`pixi run test`) |
+| `FluxDriver` (flux-file reading, unit conversions, exposure accounting) | works, unit-tested (`pixi run test`) |
 | event generation (`GMCJDriver::GenerateEvent`) | works; embedded and `gevgen_ship` paths verified content-identical (incl. full geometry) |
 | packaged cross-section splines | `genie-splines-ship` on prefix.dev/ship-experiment/stable (production build; averaged-A extension from build 101) |
 
@@ -79,7 +79,7 @@ Configuration keys (see `workflows/genie_st.jsonnet` for a full example):
 | `max_path_lengths_file` | *(unset)* | optional XML cache for the max-path-lengths flux scan: loaded if it exists, otherwise computed and saved. The scan uses the flux, so the cache depends on **geometry and flux** — regenerate it when either changes. **A stale cache is loaded silently and skews the probability normalisation** — caches made for the old GDML/TGeo geometry are invalid |
 
 The geometry is analyzed directly on the GeoModel-built Geant4 geometry
-(`ShipGeomAnalyzer`, a `genie::GeomAnalyzerI` over the SHiP geometry
+(`GeomAnalyzer`, a `genie::GeomAnalyzerI` over the SHiP geometry
 service's ray scanner) — no GDML/TGeo conversion sits between GENIE and the
 geometry the Geant4 simulation tracks through. The target-nucleus list uses
 one averaged-A ion per element (e.g. natural Cu → Cu-64), exactly as GENIE's
@@ -93,7 +93,7 @@ generator sources.
 Two details make runs reproducible and byte-comparable across paths:
 
 - **Every RNG stream GENIE draws from is reseeded per event**
-  (`aegir::reseed_event`): GENIE's `RandomGen`, ROOT's global `gRandom`,
+  (`SHiP::aegir::genie::reseed_event`): GENIE's `RandomGen`, ROOT's global `gRandom`,
   *and* Pythia6's internal RANMAR generator (`MRPY` common block) — the last
   is a hidden stream that GENIE never reseeds and whose state would
   otherwise leak from one event's hadronization into the next.
@@ -114,7 +114,7 @@ stderr in both the plugin and `gevgen_ship`; the traces diff line by line.
 Two flux formats are supported (config `flux_format` / CLI `--flux-format`):
 
 **`ship`** — the SHiP neutrino flux ntuple (schema version 1, defined in
-aegir's `docs/neutrino_flux.md`), read by `ShipFluxDriver` (a
+aegir's `docs/neutrino_flux.md`), read by `FluxDriver` (a
 `genie::GFluxI` / `GFluxExposureI` implementation): an RNTuple `nu_flux`
 with one entry per neutrino ray — PDG code, production vertex (mm, ns),
 momentum (GeV), statistical weight, parent information — plus a `flux_meta`
@@ -162,7 +162,7 @@ input. Facts worth knowing about the format and driver:
   reproducible, verifies itself; see
   [docs/validation.md](docs/validation.md)).
 - Reproducibility caveat: after a max-path-lengths flux scan the GSimple
-  driver's entry cursor cannot be rewound (unlike `ShipFluxDriver`), so a
+  driver's entry cursor cannot be rewound (unlike `FluxDriver`), so a
   run that computes the scan and a run that loads it from the cache consume
   different flux entries. Runs are byte-reproducible when the cache state is
   the same (both fresh or both cached); the physics is unaffected. With
@@ -207,7 +207,7 @@ they currently segfault on exit after writing their output (#27).
 `genie_source` and aegir's `geant4_module` run in the same process. Geant4 MT
 permits only one geometry-creating thread per process (upstream Geant4 bug
 #2747), so both plugins use the same geometry service instance and the same
-Geant4 geometry thread (`ship::geometry_thread()` from shipgeometryservice);
+Geant4 geometry thread (`SHiP::geometry_thread()` from shipgeometryservice);
 the geometry is converted once. The two-step path,
 `gevgen_ship` → `gntpc -f rootracker` → aegir's `genie_reader_source`,
 remains available for validation (see below).
@@ -216,7 +216,7 @@ remains available for validation (see below).
 
 The plugin's physics must be checkable independently of phlex. `gevgen_ship`
 is a plain command-line generator that assembles the **identical** machinery
-(`src/genie_driver_setup.hpp`: same `ShipFluxDriver`, `ShipGeomAnalyzer`,
+(`src/genie_driver_setup.hpp`: same `FluxDriver`, `GeomAnalyzer`,
 `GMCJDriver` settings, same per-event reseeding and generation order —
 identical config and seed give the **exactly identical** event sequence in
 both paths, verified event-for-event on a 200-event smoke sample), but

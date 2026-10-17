@@ -31,14 +31,22 @@
 #include "Framework/Ntuple/NtpWriter.h"
 #include "Framework/ParticleData/PDGCodeList.h"
 #include "Tools/Flux/GFluxExposureI.h"
+#include "flux_driver.hpp"
 #include "genie_config.hpp"
 #include "genie_driver_setup.hpp"
-#include "ship_flux_driver.hpp"
 
 namespace {
 
+using SHiP::aegir::genie::FluxDriver;
+using SHiP::aegir::genie::GenieDriverBundle;
+using SHiP::aegir::genie::GenieSourceConfig;
+using SHiP::aegir::genie::GeomAnalyzer;
+using SHiP::aegir::genie::make_genie_driver;
+using SHiP::aegir::genie::reseed_event;
+using SHiP::aegir::genie::trace_event;
+
 struct CliOptions {
-  aegir::GenieSourceConfig cfg;
+  GenieSourceConfig cfg;
   long n_events = -1;
   std::string output;  // .root file name, or NtpWriter filename prefix
   long run = 0;
@@ -150,10 +158,9 @@ CliOptions parse_args(int argc, char** argv) {
 // Flux description for logs: rays/POT of the whole file where the driver
 // exposes them (ship schema v1); flavour list and max energy come from the
 // generic GFluxI interface.
-std::string describe_flux(aegir::GenieDriverBundle const& bundle) {
+std::string describe_flux(GenieDriverBundle const& bundle) {
   std::ostringstream out;
-  if (auto const* ship =
-          dynamic_cast<aegir::ShipFluxDriver*>(bundle.flux.get())) {
+  if (auto const* ship = dynamic_cast<FluxDriver*>(bundle.flux.get())) {
     out << ship->entries() << " rays, " << ship->pot() << " POT, ";
   }
   out << "max energy " << bundle.flux->MaxEnergy() << " GeV, flavours [";
@@ -168,9 +175,8 @@ int run(CliOptions const& opt) {
   // Same assembly as the plugin: config validation (clear errors for missing
   // files), tune, splines, geometry, flux, Configure(). kCleanStores:
   // nothing else in this process tears the Geant4 stores down.
-  auto bundle = aegir::make_genie_driver(
-      opt.cfg, "gevgen_ship",
-      aegir::ShipGeomAnalyzer::G4Teardown::kCleanStores);
+  auto bundle = make_genie_driver(opt.cfg, "gevgen_ship",
+                                  GeomAnalyzer::G4Teardown::kCleanStores);
 
   if (opt.dry_run) {
     std::cout << "gevgen_ship: dry run OK — tune '" << opt.cfg.tune
@@ -192,7 +198,7 @@ int run(CliOptions const& opt) {
   writer.Initialize();
 
   for (long i = 0; i < opt.n_events; ++i) {
-    aegir::reseed_event(opt.cfg.seed, static_cast<std::uint32_t>(i));
+    reseed_event(opt.cfg.seed, static_cast<std::uint32_t>(i));
 
     std::unique_ptr<genie::EventRecord> event{bundle.driver->GenerateEvent()};
     if (!event) {
@@ -208,7 +214,7 @@ int run(CliOptions const& opt) {
                    "and the spline coverage.\n";
       return 1;
     }
-    aegir::trace_event(static_cast<std::uint32_t>(i), *event, *bundle.flux);
+    trace_event(static_cast<std::uint32_t>(i), *event, *bundle.flux);
     writer.AddEventRecord(static_cast<int>(i), event.get());
 
     if ((i + 1) % 100 == 0 || i + 1 == opt.n_events)

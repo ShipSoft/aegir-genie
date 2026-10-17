@@ -6,10 +6,12 @@
 // genie_source config validation
 //
 // Writes synthetic flux files with known values — a schema-v1 SHiP ntuple
-// and a GENIE GSimple file — then drives ShipFluxDriver / GSimpleNtpFlux
+// and a GENIE GSimple file — then drives FluxDriver / GSimpleNtpFlux
 // through them and checks unit conversions, exhaustion/cycling behaviour
 // and exposure accounting. Deliberately does not involve GMCJDriver, so it
 // runs without cross-section splines.
+
+#include "flux_driver.hpp"
 
 #include <TFile.h>
 #include <TSystem.h>
@@ -29,9 +31,11 @@
 
 #include "Tools/Flux/GSimpleNtpFlux.h"
 #include "genie_config.hpp"
-#include "ship_flux_driver.hpp"
 
 namespace {
+
+using SHiP::aegir::genie::FluxDriver;
+using SHiP::aegir::genie::GenieSourceConfig;
 
 int failures = 0;
 
@@ -137,7 +141,7 @@ void write_flux_file(std::string const& path,
 
 void test_metadata_and_conversions(std::string const& path) {
   std::cout << "metadata and unit conversions:\n";
-  aegir::ShipFluxDriver driver{path};
+  FluxDriver driver{path};
 
   check_close(driver.MaxEnergy(), kMaxEnergy, "MaxEnergy from flux_meta");
   check_close(driver.pot(), kPot, "POT from flux_meta");
@@ -169,7 +173,7 @@ void test_metadata_and_conversions(std::string const& path) {
 
 void test_exhaustion_and_clear(std::string const& path) {
   std::cout << "exhaustion and Clear():\n";
-  aegir::ShipFluxDriver driver{path};
+  FluxDriver driver{path};
 
   int generated = 0;
   while (driver.GenerateNext()) ++generated;
@@ -196,7 +200,7 @@ void test_exhaustion_and_clear(std::string const& path) {
 
 void test_cycling(std::string const& path) {
   std::cout << "cycling:\n";
-  aegir::ShipFluxDriver driver{path, /*cycle=*/true};
+  FluxDriver driver{path, /*cycle=*/true};
 
   auto const twice = 2 * kRays.size();
   for (std::size_t i = 0; i < twice; ++i) {
@@ -220,7 +224,7 @@ void test_flux_particles(std::string const& path) {
     std::cout << "  SKIP: $GENIE not set — run under `pixi run test`\n";
     return;
   }
-  aegir::ShipFluxDriver driver{path};
+  FluxDriver driver{path};
   auto const& list = driver.FluxParticles();
   check(list.size() == 3, "three distinct flavours (12, 14, -14)");
   check(list.ExistsInPDGCodeList(14) && list.ExistsInPDGCodeList(-14) &&
@@ -234,7 +238,7 @@ void test_flux_particles(std::string const& path) {
   std::string const bad_path = path + ".badpdg.root";
   write_flux_file(bad_path, bad_rays);
   try {
-    aegir::ShipFluxDriver bad_driver{bad_path};
+    FluxDriver bad_driver{bad_path};
     bad_driver.FluxParticles();
     check(false, "unknown PDG code throws");
   } catch (std::runtime_error const& e) {
@@ -247,7 +251,7 @@ void test_flux_particles(std::string const& path) {
 void test_bad_files() {
   std::cout << "error handling:\n";
   try {
-    aegir::ShipFluxDriver driver{"/nonexistent/flux.root"};
+    FluxDriver driver{"/nonexistent/flux.root"};
     check(false, "missing file throws");
   } catch (std::runtime_error const& e) {
     check(std::string{e.what()}.contains("flux_meta"),
@@ -358,8 +362,9 @@ void test_philox_substreams() {
 void test_config_validation(std::string const& flux_path) {
   std::cout << "genie_source config validation:\n";
 
-  auto expect_throw = [](aegir::GenieSourceConfig const& cfg,
-                         std::string const& needle, std::string const& what) {
+  auto const expect_throw = [](GenieSourceConfig const& cfg,
+                               std::string const& needle,
+                               std::string const& what) {
     try {
       cfg.validate();
       check(false, what);
@@ -369,7 +374,7 @@ void test_config_validation(std::string const& flux_path) {
     }
   };
 
-  aegir::GenieSourceConfig cfg;
+  GenieSourceConfig cfg;
   cfg.spline_file = flux_path;  // any existing file will do here
   cfg.flux_file = flux_path;
   cfg.geometry_file = flux_path;
