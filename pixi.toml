@@ -32,7 +32,9 @@ root_cxx_standard = "==23"
 genie = { version = ">=3.6.2", build = "pythia6_*" }
 random123 = "*"
 # SHiP::random::PhiloxRng, for the per-event reseeding.
-ship-random = ">=0.2"
+# ship-random 0.3 only satisfies find_package(SHiPRandom 0.3) (SameMinorVersion),
+# so keep this in step with find_package(SHiPRandom 0.2) in CMakeLists.txt.
+ship-random = ">=0.2,<0.3"
 libjsonnet = "*"
 # Geometry service (GeoModel-backed); the geometry analyzer navigates the
 # converted Geant4 geometry, so Geant4 is a direct dependency too.
