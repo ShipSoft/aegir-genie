@@ -46,7 +46,7 @@ find_package(
         ROOTNTuple
 )
 
-find_package(SHiPRandom 0.2 REQUIRED)
+find_package(SHiPRandom 0.3 REQUIRED)
 
 # ── GENIE ────────────────────────────────────────────────────────────────────
 # GENIE has no CMake config; create an imported target from genie-config
