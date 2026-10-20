@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.0] - 2026-10-20
+
+### Bug fixes
+
+- *(pixi)* Cap shipdatamodel below 0.6
+
+### Refactor
+
+- [**breaking**] Move aegir-genie into SHiP::aegir::genie and onto data-model 0.6
+
+### Build
+
+- Resolve SHiP packages from ship-experiment/stable
+- Keep ship-random below 0.3
+- Move to ship-random 0.3
+- Move to ship-random 0.4
+- Move to geometry_service 0.6
 ## [0.3.0] - 2026-10-14
 
 ### Features
@@ -42,7 +59,6 @@ All notable changes to this project will be documented in this file.
 - Sync shared configs
 - Check C++ against the Core Guidelines with clang-tidy
 - Update pixi lock file
-
 ## [0.2.0] - 2026-07-25
 
 ### Features
