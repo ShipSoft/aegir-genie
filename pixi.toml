@@ -38,11 +38,12 @@ ship-random = ">=0.4,<0.5"
 libjsonnet = "*"
 # Geometry service (GeoModel-backed); the geometry analyzer navigates the
 # converted Geant4 geometry, so Geant4 is a direct dependency too.
-# >=0.5: SHiP::geometry_thread() and SHiP::GeometryService::sharedFromFile,
-# shared with aegir's geant4_module. Keep in lockstep with aegir's pin — the
-# unversioned soname means ld.so dedups the library process-wide and the
-# first-loaded copy wins.
-shipgeometryservice = ">=0.5"
+# >=0.6: geant4WorldLogical() returns a reference. SHiP::geometry_thread()
+# and SHiP::GeometryService::sharedFromFile are shared with aegir's
+# geant4_module. Keep in lockstep with aegir's pin: both plugins load into
+# one process and have to share one copy of the library, and with it one
+# geometry thread.
+shipgeometryservice = ">=0.6,<0.7"
 geant4 = ">=11.3"
 # Required transitively by GeoModelCore's CMake config
 # (find_dependency(Eigen3)); declared explicitly because conda-forge

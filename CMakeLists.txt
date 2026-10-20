@@ -19,9 +19,10 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # 0.6: snake_case field names (SHiP::MCParticle::pdg_code, mother_id).
 find_package(SHiPDataModel 0.6 REQUIRED)
 # Geometry service (GeoModel-backed, brings Geant4 via its public interface).
-# 0.5: the SHiP namespace (SHiP::GeometryService, SHiP::geometry_thread()),
-# shared with aegir's geant4_module in the full in-process chain.
-find_package(SHiPGeometryService 0.5 CONFIG REQUIRED)
+# 0.6: the SHiP namespace (SHiP::GeometryService, SHiP::geometry_thread()),
+# shared with aegir's geant4_module in the full in-process chain, and
+# geant4WorldLogical() returning a reference.
+find_package(SHiPGeometryService 0.6...<0.7 CONFIG REQUIRED)
 
 find_package(phlex 0.4.1 REQUIRED)
 # aegir::source_helper: the shared generator-source helper

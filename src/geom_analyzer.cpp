@@ -168,7 +168,7 @@ GeomAnalyzer::GeomAnalyzer(std::shared_ptr<SHiP::IGeometryService> geometry,
 // NOLINTNEXTLINE(readability-function-size)
 void GeomAnalyzer::init(std::shared_ptr<SHiP::IGeometryService> geometry,
                         std::string const& top_volume) {
-  auto* world = geometry->geant4WorldLogical();
+  auto* world = &geometry->geant4WorldLogical();
   auto* top = world;
   if (!top_volume.empty()) {
     top = geometry->getLogicalVolume(top_volume);
