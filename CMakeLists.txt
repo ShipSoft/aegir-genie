@@ -157,13 +157,31 @@ target_include_directories(
 # GENIE libraries the consumer does not reference directly — but GENIE's
 # underlinked libraries resolve their own symbols through whatever the
 # consumer loaded, so the full set must stay in DT_NEEDED.
+# Apple's linker has no --push-state/--no-as-needed; its counterpart of
+# --as-needed is -dead_strip_dylibs (in conda-forge's LDFLAGS), so drop that
+# from this project's link flags instead, executables (gevgen_ship) included.
+if(APPLE)
+    set(_genie_keep_needed_begin "")
+    set(_genie_keep_needed_end "")
+    foreach(
+        flags
+        CMAKE_SHARED_LINKER_FLAGS
+        CMAKE_MODULE_LINKER_FLAGS
+        CMAKE_EXE_LINKER_FLAGS
+    )
+        string(REPLACE "-Wl,-dead_strip_dylibs" "" ${flags} "${${flags}}")
+    endforeach()
+else()
+    set(_genie_keep_needed_begin -Wl,--push-state,--no-as-needed)
+    set(_genie_keep_needed_end -Wl,--pop-state)
+endif()
 target_link_libraries(
     GENIE::GENIE
     INTERFACE
-        -Wl,--push-state,--no-as-needed
+        ${_genie_keep_needed_begin}
         ${GENIE_LIBRARY_FILES}
         ${GENIE_DEP_LIBRARIES}
-        -Wl,--pop-state
+        ${_genie_keep_needed_end}
         ROOT::Core
         ROOT::RIO
         ROOT::Tree
