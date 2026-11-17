@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-// genie_source.cpp — Phlex source plugin embedding the GENIE event generator
+// genie_source.cpp — Phlex provider plugin embedding the GENIE event generator
 //
 // Provides MCParticle vectors from GENIE neutrino interactions generated
 // in situ: a genie::GMCJDriver convolves the SHiP neutrino flux (schema-v1
@@ -48,11 +48,10 @@ using SHiP::aegir::genie::make_genie_driver;
 using SHiP::aegir::genie::reseed_event;
 using SHiP::aegir::genie::trace_event;
 
-class GenieSource : public phlex::source {
+class GenieSource {
  public:
-  GenieSource(std::string stage, GenieSourceConfig cfg)
-      : stage_{std::move(stage)},
-        cfg_{std::move(cfg)},
+  GenieSource(GenieSourceConfig cfg)
+      : cfg_{std::move(cfg)},
         bundle_{make_genie_driver(cfg_, "genie_source")} {}
 
   // Phlex may dispatch generate() calls out of event-number order (serial
@@ -87,14 +86,6 @@ class GenieSource : public phlex::source {
     auto out = std::move(it->second);
     ready_.erase(it);
     return out;
-  }
-
-  phlex::provider_bundles create_providers(
-      phlex::product_selector const& selector) override {
-    return SHiP::aegir::mc_particle_provider_bundles(
-        selector, stage_,
-        [this](phlex::data_cell_index const& id) { return generate(id); },
-        phlex::concurrency::serial);
   }
 
  private:
@@ -154,7 +145,6 @@ class GenieSource : public phlex::source {
     return particles;
   }
 
-  std::string stage_;
   GenieSourceConfig cfg_;
   GenieDriverBundle bundle_;  // initialized after cfg_ (declared last)
 
@@ -167,7 +157,7 @@ class GenieSource : public phlex::source {
 
 }  // namespace
 
-PHLEX_REGISTER_SOURCE(s, config) {
+PHLEX_REGISTER_PROVIDERS(s, config) {
   GenieSourceConfig cfg;
   cfg.tune = config.get<std::string>("tune", std::string{"G18_02a_02_11b"});
   cfg.spline_file = config.get<std::string>("splines");
@@ -179,7 +169,11 @@ PHLEX_REGISTER_SOURCE(s, config) {
   cfg.max_path_lengths_file =
       config.get<std::string>("max_path_lengths_file", std::string{});
 
-  auto stage = SHiP::aegir::source_stage(config, "genie_source");
-
-  s.add_source<GenieSource>("genie", std::move(stage), std::move(cfg));
+  auto const source = std::make_shared<GenieSource>(std::move(cfg));
+  SHiP::aegir::provide_mc_particles(
+      s,
+      [source](phlex::data_cell_index const& id) {
+        return source->generate(id);
+      },
+      phlex::concurrency::serial);
 }

@@ -17,9 +17,9 @@ requires-pixi = ">=0.68"
 # >=0.6: snake_case field names (pdg_code, mother_id).
 shipdatamodel = ">=0.6"
 phlex = ">=0.4.1"
-# aegir/mc_particle_source.hpp (aegir::source_helper), installed by aegir
-# since 0.4 and declared in SHiP::aegir since 0.5.
-aegir = ">=0.5"
+# aegir/mc_particle_source.hpp, installed by aegir since 0.4 and declared in
+# SHiP::aegir since 0.5. >=0.6: provide_mc_particles.
+aegir = ">=0.6"
 root = ">=6.40"
 # phlex/shipdatamodel are C++23 — pull the matching ROOT build variant.
 root_cxx_standard = "==23"
