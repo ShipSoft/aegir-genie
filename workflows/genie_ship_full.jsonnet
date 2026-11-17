@@ -23,7 +23,6 @@ local geometry = std.extVar('geometry');
   sources: {
     genie: {
       cpp: 'genie_source',
-      stage: 'simulation',
       tune: 'G18_02a_02_11b',
       splines: S + '/gxspl-ship.xml',
       flux_file: S + '/gsimple_flux_shuffled.root',

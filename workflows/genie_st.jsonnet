@@ -34,7 +34,6 @@
   sources: {
     genie: {
       cpp: 'genie_source',
-      stage: 'simulation',
       // GENIE comprehensive model tune; must match the splines exactly.
       tune: 'G18_02a_02_11b',
       splines: 'gxspl-ship.xml',
