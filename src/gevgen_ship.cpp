@@ -103,11 +103,13 @@ CliOptions parse_args(int argc, char** argv) {
   CliOptions opt;
   std::vector<std::string> const args(argv + 1, argv + argc);
 
-  auto value = [&args](std::size_t& i, std::string const& flag) {
-    if (i + 1 >= args.size()) fail("missing value for " + flag);
+  auto const value = [&args](std::size_t& i, std::string const& flag) {
+    if (i + 1 >= args.size()) {
+      fail("missing value for " + flag);
+    }
     return args[++i];
   };
-  auto long_value = [](std::string const& s, long& out) {
+  auto const long_value = [](std::string const& s, long& out) {
     auto const* end = s.data() + s.size();
     auto const res = std::from_chars(s.data(), end, out);
     return res.ec == std::errc() && res.ptr == end;
@@ -127,8 +129,9 @@ CliOptions parse_args(int argc, char** argv) {
     } else if (a == "-x" || a == "--splines") {
       opt.cfg.spline_file = value(i, a);
     } else if (a == "-n" || a == "--events") {
-      if (!long_value(value(i, a), opt.n_events) || opt.n_events <= 0)
+      if (!long_value(value(i, a), opt.n_events) || opt.n_events <= 0) {
         fail("--events expects a positive integer, got '" + args[i] + "'");
+      }
     } else if (a == "-o" || a == "--output") {
       opt.output = value(i, a);
     } else if (a == "-t" || a == "--tune") {
@@ -136,13 +139,15 @@ CliOptions parse_args(int argc, char** argv) {
     } else if (a == "-v" || a == "--top-volume") {
       opt.cfg.top_volume = value(i, a);
     } else if (a == "-s" || a == "--seed") {
-      if (!long_value(value(i, a), opt.cfg.seed))
+      if (!long_value(value(i, a), opt.cfg.seed)) {
         fail("--seed expects an integer, got '" + args[i] + "'");
+      }
     } else if (a == "-m" || a == "--max-path-lengths") {
       opt.cfg.max_path_lengths_file = value(i, a);
     } else if (a == "--run") {
-      if (!long_value(value(i, a), opt.run) || opt.run < 0)
+      if (!long_value(value(i, a), opt.run) || opt.run < 0) {
         fail("--run expects a non-negative integer, got '" + args[i] + "'");
+      }
     } else if (a == "--dry-run") {
       opt.dry_run = true;
     } else {
@@ -150,8 +155,9 @@ CliOptions parse_args(int argc, char** argv) {
     }
   }
 
-  if (opt.n_events < 0 && !opt.dry_run)
+  if (opt.n_events < 0 && !opt.dry_run) {
     fail("--events is required (or use --dry-run)");
+  }
   return opt;
 }
 
@@ -165,8 +171,9 @@ std::string describe_flux(GenieDriverBundle const& bundle) {
   }
   out << "max energy " << bundle.flux->MaxEnergy() << " GeV, flavours [";
   auto const& pdgs = bundle.flux->FluxParticles();
-  for (std::size_t i = 0; i < pdgs.size(); ++i)
+  for (std::size_t i = 0; i < pdgs.size(); ++i) {
     out << (i ? ", " : "") << pdgs[i];
+  }
   out << "]";
   return out.str();
 }
@@ -188,10 +195,11 @@ int run(CliOptions const& opt) {
 
   genie::NtpWriter writer(genie::kNFGHEP, opt.run, opt.cfg.seed);
   if (!opt.output.empty()) {
-    if (opt.output.ends_with(".root"))
+    if (opt.output.ends_with(".root")) {
       writer.CustomizeFilename(opt.output);
-    else
+    } else {
       writer.CustomizeFilenamePrefix(opt.output);
+    }
   } else {
     writer.CustomizeFilenamePrefix("gevgen_ship");
   }
@@ -200,7 +208,8 @@ int run(CliOptions const& opt) {
   for (long i = 0; i < opt.n_events; ++i) {
     reseed_event(opt.cfg.seed, static_cast<std::uint32_t>(i));
 
-    std::unique_ptr<genie::EventRecord> event{bundle.driver->GenerateEvent()};
+    std::unique_ptr<genie::EventRecord> const event{
+        bundle.driver->GenerateEvent()};
     if (!event) {
       // The flux drivers cycle, so exhaustion "cannot happen" — but if GENIE
       // still comes back empty-handed, say what the flux looked like.
@@ -217,9 +226,10 @@ int run(CliOptions const& opt) {
     trace_event(static_cast<std::uint32_t>(i), *event, *bundle.flux);
     writer.AddEventRecord(static_cast<int>(i), event.get());
 
-    if ((i + 1) % 100 == 0 || i + 1 == opt.n_events)
+    if ((i + 1) % 100 == 0 || i + 1 == opt.n_events) {
       std::cout << "gevgen_ship: generated " << (i + 1) << " / " << opt.n_events
                 << " events\n";
+    }
   }
 
   writer.Save();
@@ -250,10 +260,11 @@ int main(int argc, char** argv) {
   } catch (std::exception const& e) {
     // Config/setup errors already carry the "gevgen_ship:" context.
     std::string const what = e.what();
-    if (what.starts_with("gevgen_ship:"))
+    if (what.starts_with("gevgen_ship:")) {
       std::cerr << what << '\n';
-    else
+    } else {
       std::cerr << "gevgen_ship: " << what << '\n';
+    }
     return 1;
   }
 }

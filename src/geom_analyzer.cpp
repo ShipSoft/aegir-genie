@@ -108,8 +108,9 @@ void find_placements(
     auto const daughter_translation =
         rotation * pv->GetObjectTranslation() + translation;
     auto const* lv = pv->GetLogicalVolume();
-    if (lv == target)
+    if (lv == target) {
       found.emplace_back(daughter_rotation, daughter_translation);
+    }
     find_placements(lv, target, daughter_rotation, daughter_translation, found);
   }
 }
@@ -118,8 +119,9 @@ void find_placements(
 void collect_materials(G4LogicalVolume const* lv,
                        std::set<G4Material const*>& materials) {
   materials.insert(lv->GetMaterial());
-  for (std::size_t i = 0; i < lv->GetNoDaughters(); ++i)
+  for (std::size_t i = 0; i < lv->GetNoDaughters(); ++i) {
     collect_materials(lv->GetDaughter(i)->GetLogicalVolume(), materials);
+  }
 }
 
 }  // namespace
@@ -172,21 +174,24 @@ void GeomAnalyzer::init(std::shared_ptr<SHiP::IGeometryService> geometry,
   auto* top = world;
   if (!top_volume.empty()) {
     top = geometry->getLogicalVolume(top_volume);
-    if (!top)
+    if (!top) {
       throw std::runtime_error("GeomAnalyzer: top_volume '" + top_volume +
                                "' not found in the converted Geant4 geometry");
+    }
     if (top != world) {
       std::vector<std::pair<G4RotationMatrix, G4ThreeVector>> placements;
       find_placements(world, top, G4RotationMatrix{}, G4ThreeVector{},
                       placements);
-      if (placements.empty())
+      if (placements.empty()) {
         throw std::runtime_error("GeomAnalyzer: top_volume '" + top_volume +
                                  "' is not placed in the world");
-      if (placements.size() > 1)
+      }
+      if (placements.size() > 1) {
         throw std::runtime_error(
             "GeomAnalyzer: top_volume '" + top_volume + "' is placed " +
             std::to_string(placements.size()) +
             " times — the flux-frame mapping would be ambiguous");
+      }
       impl_->rotation = placements.front().first;
       impl_->inverse_rotation = impl_->rotation.inverse();
       impl_->translation = placements.front().second;
@@ -212,10 +217,13 @@ void GeomAnalyzer::init(std::shared_ptr<SHiP::IGeometryService> geometry,
     }
     impl_->weights.emplace(material, std::move(material_weights));
   }
-  for (int pdg : target_set) targets_.push_back(pdg);
+  for (int const pdg : target_set) {
+    targets_.push_back(pdg);
+  }
 
   // Scan-volume bounding box, mapped to the master frame.
-  G4ThreeVector lo, hi;
+  G4ThreeVector lo;
+  G4ThreeVector hi;
   top->GetSolid()->BoundingLimits(lo, hi);
   TVector3 min_m{INFINITY, INFINITY, INFINITY};
   TVector3 max_m{-INFINITY, -INFINITY, -INFINITY};
@@ -229,7 +237,7 @@ void GeomAnalyzer::init(std::shared_ptr<SHiP::IGeometryService> geometry,
       max_m[axis] = std::max(max_m[axis], master[axis]);
     }
   }
-  extents_ = Extents{min_m, max_m};
+  extents_ = Extents{.lo = min_m, .hi = max_m};
 }
 
 GeomAnalyzer::~GeomAnalyzer() {
@@ -256,18 +264,20 @@ GeomAnalyzer::~GeomAnalyzer() {
   path_lengths_.SetAllToZero();
   for (auto const& segment : impl_->scan.segments) {
     double const length_m = segment.length / 1e3;  // mm -> m
-    for (auto const& [pdg, weight] : impl_->weights.at(segment.material))
+    for (auto const& [pdg, weight] : impl_->weights.at(segment.material)) {
       path_lengths_.AddPathLength(pdg, weight * length_m);  // kg/m2
+    }
   }
   return path_lengths_;
 }
 
 ::genie::PathLengthList const& GeomAnalyzer::ComputeMaxPathLengths() {
-  if (!scanner_flux_)
+  if (!scanner_flux_) {
     throw std::runtime_error(
         "GeomAnalyzer: SetScannerFlux must be called before "
         "ComputeMaxPathLengths — the flux scan is the only supported "
         "max-path-lengths strategy");
+  }
   max_path_lengths_.SetAllToZero();
   {
     // The scan consumes flux rays; reset the exposure bookkeeping on every
@@ -278,13 +288,16 @@ GeomAnalyzer::~GeomAnalyzer() {
       ~ClearCycleHistory() { flux->Clear("CycleHistory"); }
     } const guard{scanner_flux_};
     for (int i = 0; i < scanner_particles_; ++i) {
-      if (!scanner_flux_->GenerateNext()) continue;
+      if (!scanner_flux_->GenerateNext()) {
+        continue;
+      }
       auto const& pl = ComputePathLengths(scanner_flux_->Position(),
                                           scanner_flux_->Momentum());
       for (auto const& [pdg, length] : pl) {
         double const padded = length * safety_factor_;
-        if (padded > max_path_lengths_.PathLength(pdg))
+        if (padded > max_path_lengths_.PathLength(pdg)) {
           max_path_lengths_.SetPathLength(pdg, padded);
+        }
       }
     }
   }
@@ -294,27 +307,33 @@ GeomAnalyzer::~GeomAnalyzer() {
 TVector3 const& GeomAnalyzer::GenerateVertex(TLorentzVector const& x,
                                              TLorentzVector const& p,
                                              int tgtpdg) {
-  if (!impl_->have_scan || impl_->last_x != x || impl_->last_p != p)
+  if (!impl_->have_scan || impl_->last_x != x || impl_->last_p != p) {
     ComputePathLengths(x, p);
+  }
 
   // Weight per segment for this target: 0 in materials that do not contain
   // it. Units cancel in the ratio, so plain mm x (kg/m3) suffices here.
   auto const segment_weight = [this, tgtpdg](SHiP::RaySegment const& segment) {
     double weight = 0.;
-    for (auto const& [pdg, w] : impl_->weights.at(segment.material))
-      if (pdg == tgtpdg) weight += w;
+    for (auto const& [pdg, w] : impl_->weights.at(segment.material)) {
+      if (pdg == tgtpdg) {
+        weight += w;
+      }
+    }
     return weight * segment.length;
   };
 
   double total = 0.;
-  for (auto const& segment : impl_->scan.segments)
+  for (auto const& segment : impl_->scan.segments) {
     total += segment_weight(segment);
-  if (total <= 0.)
+  }
+  if (total <= 0.) {
     throw std::runtime_error(
         "GeomAnalyzer: GenerateVertex called for target " +
         std::to_string(tgtpdg) +
         " with zero path length on the current ray — GMCJDriver should only "
         "request targets seen by ComputePathLengths");
+  }
 
   // Uniform in the density-weighted path of this target along the ray
   // (mirrors ROOTGeomAnalyzer, including the RndGeom stream).
@@ -332,10 +351,13 @@ TVector3 const& GeomAnalyzer::GenerateVertex(TLorentzVector const& x,
     }
     accumulated += weight;
     distance += segment.length;
-    if (weight > 0.) last_target_end = distance;
+    if (weight > 0.) {
+      last_target_end = distance;
+    }
   }
-  if (!placed)  // floating-point edge: r landed just beyond the accumulation
+  if (!placed) {  // floating-point edge: r landed just beyond the accumulation
     distance = last_target_end;
+  }
 
   auto const vertex_top = impl_->scan_origin + distance * impl_->scan_direction;
   auto const vertex_master = impl_->top_to_master(vertex_top);

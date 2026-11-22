@@ -52,26 +52,29 @@ FluxDriver::FluxDriver(std::string const& path, bool cycle)
         "' — is this a SHiP neutrino flux file (docs/neutrino_flux.md)? (" +
         e.what() + ")");
   }
-  if (meta->GetNEntries() != 1)
+  if (meta->GetNEntries() != 1) {
     throw std::runtime_error("flux_driver: 'flux_meta' in '" + path +
                              "' holds " + std::to_string(meta->GetNEntries()) +
                              " entries, expected exactly 1");
+  }
   {
     auto version = meta->GetView<std::int32_t>("schema_version");
     auto pot = meta->GetView<double>("pot");
     auto max_energy = meta->GetView<double>("max_energy");
-    if (version(0) != kSupportedSchemaVersion)
+    if (version(0) != kSupportedSchemaVersion) {
       throw std::runtime_error(
           "flux_driver: '" + path + "' declares schema version " +
           std::to_string(version(0)) + "; this driver supports version " +
           std::to_string(kSupportedSchemaVersion));
+    }
     pot_ = pot(0);
     max_energy_ = max_energy(0);
   }
-  if (max_energy_ <= 0.0)
+  if (max_energy_ <= 0.0) {
     throw std::runtime_error(
         "flux_driver: '" + path + "' declares max_energy = " +
         std::to_string(max_energy_) + " GeV (must be > 0)");
+  }
 
   // --- flux rays ------------------------------------------------------------
   std::unique_ptr<ROOT::RNTupleReader> flux;
@@ -82,9 +85,10 @@ FluxDriver::FluxDriver(std::string const& path, bool cycle)
                              path + "' (" + e.what() + ")");
   }
   n_entries_ = flux->GetNEntries();
-  if (n_entries_ == 0)
+  if (n_entries_ == 0) {
     throw std::runtime_error("flux_driver: '" + path +
                              "' contains no flux entries");
+  }
 
   try {
     auto& r = *flux;
@@ -113,12 +117,14 @@ FluxDriver::FluxDriver(std::string const& path, bool cycle)
   // weight consumed, not the entry count — the two differ mid-cycle for
   // files with non-uniform weights (merged samples). One startup scan over
   // the columnar weight field.
-  for (std::uint64_t i = 0; i < n_entries_; ++i)
+  for (std::uint64_t i = 0; i < n_entries_; ++i) {
     total_weight_ += reader_->weight(i);
-  if (!(total_weight_ > 0.0))
+  }
+  if (!(total_weight_ > 0.0)) {
     throw std::runtime_error("flux_driver: flux weights in '" + path +
                              "' sum to " + std::to_string(total_weight_) +
                              " (must be > 0)");
+  }
 }
 
 FluxDriver::~FluxDriver() = default;
@@ -128,17 +134,22 @@ FluxDriver::~FluxDriver() = default;
     // One scan over the (columnar, compressed) pdg field; deduplicate first
     // so PDGCodeList's PDG-library validation runs once per flavour.
     std::set<std::int32_t> codes;
-    for (std::uint64_t i = 0; i < n_entries_; ++i)
+    for (std::uint64_t i = 0; i < n_entries_; ++i) {
       codes.insert(reader_->pdg(i));
-    for (auto code : codes) pdg_list_.push_back(code);
+    }
+    for (auto const code : codes) {
+      pdg_list_.push_back(code);
+    }
     // PDGCodeList::push_back silently skips codes PDGLibrary does not know
     // (a GENIE log line only); rays with such codes would still be served to
     // a GMCJDriver that configured no generator for them, so fail loudly.
     if (pdg_list_.size() != codes.size()) {
       std::string dropped;
-      for (auto code : codes)
-        if (!pdg_list_.ExistsInPDGCodeList(code))
+      for (auto const code : codes) {
+        if (!pdg_list_.ExistsInPDGCodeList(code)) {
           dropped += (dropped.empty() ? "" : ", ") + std::to_string(code);
+        }
+      }
       throw std::runtime_error(
           "flux_driver: '" + path_ +
           "' contains PDG code(s) unknown to GENIE's PDGLibrary: " + dropped);
@@ -149,7 +160,9 @@ FluxDriver::~FluxDriver() = default;
 }
 
 bool FluxDriver::GenerateNext() {
-  if (end_) return false;
+  if (end_) {
+    return false;
+  }
   auto next = static_cast<std::uint64_t>(index_ + 1);
   if (next >= n_entries_) {
     if (!cycle_) {
@@ -166,7 +179,7 @@ bool FluxDriver::GenerateNext() {
   double const py = r.py(next);
   double const pz = r.pz(next);
   // Massless neutrinos: E = |p|.
-  p4_.SetPxPyPzE(px, py, pz, std::sqrt(px * px + py * py + pz * pz));
+  p4_.SetPxPyPzE(px, py, pz, std::sqrt((px * px) + (py * py) + (pz * pz)));
   x4_.SetXYZT(r.vx(next) * kMm2M, r.vy(next) * kMm2M, r.vz(next) * kMm2M,
               r.t(next) * kNs2S);
 
@@ -183,7 +196,8 @@ FluxDriver::Ray FluxDriver::peek_first_ray() {
   double const px = r.px(0);
   double const py = r.py(0);
   double const pz = r.pz(0);
-  ray.momentum.SetPxPyPzE(px, py, pz, std::sqrt(px * px + py * py + pz * pz));
+  ray.momentum.SetPxPyPzE(px, py, pz,
+                          std::sqrt((px * px) + (py * py) + (pz * pz)));
   ray.position.SetXYZT(r.vx(0) * kMm2M, r.vy(0) * kMm2M, r.vz(0) * kMm2M,
                        r.t(0) * kNs2S);
   return ray;

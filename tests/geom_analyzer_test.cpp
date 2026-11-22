@@ -101,11 +101,14 @@ constexpr double kGCm3ToKgM3 = 1000.;
 // geometries (getLogicalVolume searches the global Geant4 store by name).
 PVConstLink build_world(std::string const& suffix) {
   namespace GU = GeoModelKernelUnits;
-  auto* nitrogen =
+  auto const* nitrogen =
       new GeoElement("Nitrogen", "N", 7, 14.007 * GU::g / GU::mole);
-  auto* oxygen = new GeoElement("Oxygen", "O", 8, 15.999 * GU::g / GU::mole);
-  auto* iron = new GeoElement("Iron", "Fe", 26, 55.845 * GU::g / GU::mole);
-  auto* copper = new GeoElement("Copper", "Cu", 29, 63.546 * GU::g / GU::mole);
+  auto const* oxygen =
+      new GeoElement("Oxygen", "O", 8, 15.999 * GU::g / GU::mole);
+  auto const* iron =
+      new GeoElement("Iron", "Fe", 26, 55.845 * GU::g / GU::mole);
+  auto const* copper =
+      new GeoElement("Copper", "Cu", 29, 63.546 * GU::g / GU::mole);
 
   auto* gas =
       new GeoMaterial("TestGas" + suffix, kGasDensity * GU::g / GU::cm3);
@@ -158,7 +161,7 @@ TLorentzVector ray_momentum() { return {0., 0., 10., 10.}; }
 // Analytic density-weighted path lengths (kg/m2) for the axial ray through
 // the whole world.
 double const kGasPl =
-    kGasDensity * kGCm3ToKgM3 * (2 * kWorldHalf - 2 * 2 * kCubeHalf) / 1e3;
+    kGasDensity * kGCm3ToKgM3 * ((2 * kWorldHalf) - (2 * 2 * kCubeHalf)) / 1e3;
 double const kIronPl = kIronDensity * kGCm3ToKgM3 * 2 * kCubeHalf / 1e3;
 double const kCopperPl = kCopperDensity * kGCm3ToKgM3 * 2 * kCubeHalf / 1e3;
 
@@ -208,10 +211,11 @@ void test_targets_and_path_lengths() {
 
   auto const& targets = analyzer->ListOfTargetNuclei();
   check(targets.size() == 4, "four target nuclei (N, O, Fe, Cu)");
-  for (int pdg : {kNitrogenPdg, kOxygenPdg, kIronPdg, kCopperPdg})
+  for (int const pdg : {kNitrogenPdg, kOxygenPdg, kIronPdg, kCopperPdg}) {
     check(std::find(targets.begin(), targets.end(), pdg) != targets.end(),
           "target list contains " + std::to_string(pdg) +
               " (averaged-A ion code)");
+  }
 
   auto const& extents = analyzer->extents();
   check_close(extents.lo.Z(), -1., "extents lo z (SI m)");
@@ -235,7 +239,8 @@ void test_targets_and_path_lengths() {
   // Vertex generation for the iron target: on the ray, inside the cube.
   genie::RandomGen::Instance()->SetSeed(12345);
   analyzer->ComputePathLengths(ray_position(-1.5), ray_momentum());
-  double lo = 1e9, hi = -1e9;
+  double lo = 1e9;
+  double hi = -1e9;
   bool on_axis = true;
   for (int i = 0; i < 500; ++i) {
     auto const& v =
@@ -262,8 +267,9 @@ void test_max_path_lengths() {
   // Two rays: the axial one crosses both cubes, the off-axis one crosses
   // only gas — the maxima must come from the axial ray, padded by the
   // safety factor.
-  StubFlux flux{{{ray_position(-1.5), ray_momentum()},
-                 {{0., 0.5, -1.5, 0.}, ray_momentum()}}};
+  StubFlux flux{
+      {{.position = ray_position(-1.5), .momentum = ray_momentum()},
+       {.position = {0., 0.5, -1.5, 0.}, .momentum = ray_momentum()}}};
   analyzer->SetScannerFlux(&flux);
   analyzer->SetScannerNParticles(4);  // both rays, twice
 
@@ -344,7 +350,8 @@ void test_thread_migration() {
   // must confine Geant4 navigation to its internal thread. Exercise the
   // whole lifecycle (construction, scans, destruction) from two threads.
   std::unique_ptr<GeomAnalyzer> analyzer;
-  double first = 0., second = 0.;
+  double first = 0.;
+  double second = 0.;
   std::thread{[&] {
     analyzer = make_analyzer("F");
     first = analyzer->ComputePathLengths(ray_position(-1.5), ray_momentum())
