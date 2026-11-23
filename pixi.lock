@@ -145,6 +145,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/libhwloc-2.15.0-default_hd7c4d0c_1001.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/libiconv-1.18-h3b78370_2.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/libjpeg-turbo-3.2.0-hb03c661_1.conda
+      - conda: https://conda.anaconda.org/conda-forge/linux-64/libjsonnet-0.22.0-h4dbf13b_2.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/liblapack-3.11.0-8_h47877c9_openblas.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/libllvm20-20.1.8-hf7376ad_1.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/libllvm23-23.1.1-h474f4eb_0.conda
@@ -397,7 +398,6 @@ environments:
       - conda: https://prefix.dev/ship-experiment/stable/linux-64/field-service-g4-0.4.0-hafd7d45_1.conda
       - conda: https://prefix.dev/ship-experiment/stable/linux-64/field-service-mapio-0.4.0-hafd7d45_1.conda
       - conda: https://prefix.dev/ship-experiment/stable/linux-64/genie-3.06.02-pythia6_7f30c96_9.conda
-      - conda: https://prefix.dev/ship-experiment/stable/linux-64/libjsonnet-0.22.0-hb0f4dca_1.conda
       - conda: https://prefix.dev/ship-experiment/stable/linux-64/mp-units-2.5.0-hb0f4dca_5.conda
       - conda: https://prefix.dev/ship-experiment/stable/linux-64/pythia6-6.4.28-hb0f4dca_6.conda
       - conda: https://prefix.dev/ship-experiment/stable/linux-64/rootegpythia6-0.1-h0518e97_11.conda
@@ -925,6 +925,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/libhwloc-2.15.0-default_hd7c4d0c_1001.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/libiconv-1.18-h3b78370_2.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/libjpeg-turbo-3.2.0-hb03c661_1.conda
+      - conda: https://conda.anaconda.org/conda-forge/linux-64/libjsonnet-0.22.0-h4dbf13b_2.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/liblapack-3.11.0-8_h47877c9_openblas.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/libllvm20-20.1.8-hf7376ad_1.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/libllvm22-22.1.8-hf7376ad_1.conda
@@ -1188,7 +1189,6 @@ environments:
       - conda: https://prefix.dev/ship-experiment/stable/linux-64/field-service-g4-0.4.0-hafd7d45_1.conda
       - conda: https://prefix.dev/ship-experiment/stable/linux-64/field-service-mapio-0.4.0-hafd7d45_1.conda
       - conda: https://prefix.dev/ship-experiment/stable/linux-64/genie-3.06.02-pythia6_7f30c96_9.conda
-      - conda: https://prefix.dev/ship-experiment/stable/linux-64/libjsonnet-0.22.0-hb0f4dca_1.conda
       - conda: https://prefix.dev/ship-experiment/stable/linux-64/mp-units-2.5.0-hb0f4dca_5.conda
       - conda: https://prefix.dev/ship-experiment/stable/linux-64/pythia6-6.4.28-hb0f4dca_6.conda
       - conda: https://prefix.dev/ship-experiment/stable/linux-64/rootegpythia6-0.1-h0518e97_11.conda
@@ -3860,6 +3860,21 @@ packages:
     - libjpeg-turbo >=3.2.0,<4.0a0
   size: 650434
   timestamp: 1785896381946
+- conda: https://conda.anaconda.org/conda-forge/linux-64/libjsonnet-0.22.0-h4dbf13b_2.conda
+  sha256: 23d8b2431616477065447cf5160bcdd5a2d114b2cd528a9acb429f97f0debf25
+  md5: 07b9dbb342d553ab5f377e4d60ccf25b
+  depends:
+  - __glibc >=2.17,<3.0.a0
+  - libstdcxx >=15
+  - libgcc >=15
+  license: Apache-2.0
+  license_family: APACHE
+  purls: []
+  run_exports:
+    weak:
+    - libjsonnet >=0.22.0,<0.23.0a0
+  size: 1512159
+  timestamp: 1792162690043
 - conda: https://conda.anaconda.org/conda-forge/linux-64/liblapack-3.11.0-8_h47877c9_openblas.conda
   build_number: 8
   sha256: 168e327d737059553e15cc6ec36d76b9bbb3931c2a7721555fd68b4c9348b247
@@ -12931,7 +12946,7 @@ packages:
   license: MIT
   license_family: MIT
   purls:
-  - pkg:pypi/setuptools?source=compressed-mapping
+  - pkg:pypi/setuptools?source=hash-mapping
   run_exports: {}
   size: 524690
   timestamp: 1792442584277
@@ -13603,16 +13618,6 @@ packages:
     - genie >=3.6.2,<3.7.0a0
   size: 4553177
   timestamp: 1790672442406
-- conda: https://prefix.dev/ship-experiment/stable/linux-64/libjsonnet-0.22.0-hb0f4dca_1.conda
-  sha256: 1ee21a908866ba38a0585bbc199355b178f875aa354365387424965ee01d9dab
-  md5: 91450f10621400e7176bc1fbd31c8d60
-  depends:
-  - libstdcxx >=15
-  - libgcc >=15
-  - __glibc >=2.17,<3.0.a0
-  run_exports: {}
-  size: 1512092
-  timestamp: 1781105218476
 - conda: https://prefix.dev/ship-experiment/stable/linux-64/mp-units-2.5.0-hb0f4dca_5.conda
   sha256: 98eb61e874a65c8172a6dc7ed7a111f68934c563955ff4448f14b681e8686dca
   md5: d32935557c13c811d14f573bf78c4490
