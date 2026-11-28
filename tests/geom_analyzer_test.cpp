@@ -6,7 +6,7 @@
 //
 // Builds a small GeoModel geometry with known materials in the test (gas
 // world with a copper and an iron cube on the z axis), wraps it via
-// GeometryService::fromWorld, and checks the analyzer's GeomAnalyzerI
+// SHiP::geometryServiceFromWorld, and checks the analyzer's GeomAnalyzerI
 // contract against analytic values: target-nucleus list (averaged-A ion
 // codes), density-weighted path lengths in SI kg/m2, vertex generation, the
 // flux-driven max-path-lengths scan (including the Clear("CycleHistory")
@@ -51,7 +51,8 @@
 #include "Framework/EventGen/PathLengthList.h"
 #include "Framework/Numerical/RandomGen.h"
 #include "Framework/ParticleData/PDGCodeList.h"
-#include "SHiP/GeometryService/GeometryService.h"
+#include "SHiP/GeometryService/Geant4Geometry.h"
+#include "SHiP/GeometryService/GeoModel.h"
 #include "SHiP/GeometryService/GeometryThread.h"
 
 namespace {
@@ -98,7 +99,7 @@ constexpr int kCopperPdg = 1000290640;    // Cu-64 (63.546 rounds to 64)
 constexpr double kGCm3ToKgM3 = 1000.;
 
 // `suffix` keeps volume names unique across the sequentially created
-// geometries (getLogicalVolume searches the global Geant4 store by name).
+// geometries (logicalVolume used to search the global Geant4 store by name).
 PVConstLink build_world(std::string const& suffix) {
   namespace GU = GeoModelKernelUnits;
   auto* nitrogen =
@@ -147,7 +148,9 @@ std::unique_ptr<GeomAnalyzer> make_analyzer(
   auto world = build_world(suffix);
   keep_alive.push_back(world);
   return std::make_unique<GeomAnalyzer>(
-      SHiP::GeometryService::fromWorld(std::move(world)), top_volume, teardown);
+      SHiP::Geant4Geometry::of(
+          SHiP::geometryServiceFromWorld(std::move(world))),
+      top_volume, teardown);
 }
 
 // A ray in the flux frame: SI meters (position) and GeV (momentum), like

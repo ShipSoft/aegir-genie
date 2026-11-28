@@ -18,11 +18,19 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # Dependencies (from the default pixi environment)
 # 0.6: snake_case field names (SHiP::MCParticle::pdg_code, mother_id).
 find_package(SHiPDataModel 0.6 REQUIRED)
-# Geometry service (GeoModel-backed, brings Geant4 via its public interface).
-# 0.6: the SHiP namespace (SHiP::GeometryService, SHiP::geometry_thread()),
-# shared with aegir's geant4_module in the full in-process chain, and
-# geant4WorldLogical() returning a reference.
-find_package(SHiPGeometryService 0.6...<0.7 CONFIG REQUIRED)
+# Geometry service. 0.7: the Geant4 part (Geant4Geometry, G4RayScanner,
+# SHiP::geometry_thread()) is the G4 component, shared with aegir's
+# geant4_module in the full in-process chain. The GeoModel component is for
+# the analyzer test, which builds its worlds in memory.
+find_package(
+    SHiPGeometryService
+    0.7...<0.8
+    CONFIG
+    REQUIRED
+    COMPONENTS G4 GeoModel
+)
+# The geometry analyzer navigates the converted Geant4 geometry itself.
+find_package(Geant4 11.3 CONFIG REQUIRED)
 
 find_package(phlex 0.4.1 REQUIRED)
 # aegir::source_helper: the shared generator-source helper
@@ -214,7 +222,12 @@ target_include_directories(
 )
 target_link_libraries(
     aegir_genie_core
-    PUBLIC ROOT::ROOTNTuple GENIE::GENIE SHiP::GeometryService SHiP::Random
+    PUBLIC
+        ROOT::ROOTNTuple
+        GENIE::GENIE
+        SHiP::GeometryServiceG4
+        ${Geant4_LIBRARIES}
+        SHiP::Random
 )
 
 # Phlex plugin: the embedded GENIE event generator source.
@@ -237,7 +250,10 @@ target_link_libraries(flux_driver_test PRIVATE aegir_genie_core)
 # Standalone geometry-analyzer test: builds a small GeoModel geometry
 # in-process; needs the PDG library ($GENIE) but no splines.
 add_executable(geom_analyzer_test tests/geom_analyzer_test.cpp)
-target_link_libraries(geom_analyzer_test PRIVATE aegir_genie_core)
+target_link_libraries(
+    geom_analyzer_test
+    PRIVATE aegir_genie_core SHiP::GeometryServiceGeoModel
+)
 
 # Standalone spline-tune sniffing test: pure file parsing, no GENIE
 # initialization.

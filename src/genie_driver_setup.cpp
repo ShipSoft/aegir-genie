@@ -24,6 +24,7 @@
 #include "Framework/Numerical/RandomGen.h"
 #include "Framework/Utils/AppInit.h"
 #include "Framework/Utils/RunOpt.h"
+#include "SHiP/GeometryService/Geant4Geometry.h"
 #include "SHiP/GeometryService/GeometryService.h"
 #include "Tools/Flux/GFluxExposureI.h"
 #include "Tools/Flux/GSimpleNtpFlux.h"
@@ -154,12 +155,13 @@ GenieDriverBundle make_genie_driver(GenieSourceConfig const& cfg,
 
   // 5. Geometry: the same GeoModel db the Geant4 side tracks through,
   //    converted to Geant4 and analyzed directly (GeomAnalyzer works in
-  //    SI, no unit configuration needed). sharedFromFile hands aegir's
-  //    geometry provider the same instance in the full in-process chain, so
-  //    the geometry is loaded and converted exactly once.
+  //    SI, no unit configuration needed). sharedFromFile and
+  //    Geant4Geometry::of hand aegir's geometry provider the same instances
+  //    in the full in-process chain, so the geometry is loaded and converted
+  //    exactly once.
   bundle.geom = std::make_unique<GeomAnalyzer>(
-      SHiP::GeometryService::sharedFromFile(
-          resolve_geometry_file(cfg.geometry_file, context)),
+      SHiP::Geant4Geometry::of(SHiP::GeometryService::sharedFromFile(
+          resolve_geometry_file(cfg.geometry_file, context))),
       cfg.top_volume, teardown);
 
   // 6. Flux. Both drivers cycle through the file indefinitely so
