@@ -71,7 +71,9 @@ constexpr double kPot = 6.5041e10;
 constexpr double kMaxEnergy = 35.001;
 double const kTotalWeight = [] {
   double sum = 0.0;
-  for (auto const& ray : kRays) sum += ray.weight;
+  for (auto const& ray : kRays) {
+    sum += ray.weight;
+  }
   return sum;
 }();
 
@@ -79,22 +81,22 @@ void write_flux_file(std::string const& path,
                      std::vector<Ray> const& rays = kRays) {
   {
     auto model = ROOT::RNTupleModel::Create();
-    auto pdg = model->MakeField<std::int32_t>("pdg");
-    auto vx = model->MakeField<double>("vx");
-    auto vy = model->MakeField<double>("vy");
-    auto vz = model->MakeField<double>("vz");
-    auto t = model->MakeField<double>("t");
-    auto px = model->MakeField<double>("px");
-    auto py = model->MakeField<double>("py");
-    auto pz = model->MakeField<double>("pz");
-    auto weight = model->MakeField<double>("weight");
-    auto parent_pdg = model->MakeField<std::int32_t>("parent_pdg");
-    auto parent_px = model->MakeField<double>("parent_px");
-    auto parent_py = model->MakeField<double>("parent_py");
-    auto parent_pz = model->MakeField<double>("parent_pz");
-    auto process_id = model->MakeField<std::int32_t>("process_id");
-    auto origin_run = model->MakeField<std::int64_t>("origin_run");
-    auto origin_event = model->MakeField<std::int64_t>("origin_event");
+    auto const pdg = model->MakeField<std::int32_t>("pdg");
+    auto const vx = model->MakeField<double>("vx");
+    auto const vy = model->MakeField<double>("vy");
+    auto const vz = model->MakeField<double>("vz");
+    auto const t = model->MakeField<double>("t");
+    auto const px = model->MakeField<double>("px");
+    auto const py = model->MakeField<double>("py");
+    auto const pz = model->MakeField<double>("pz");
+    auto const weight = model->MakeField<double>("weight");
+    auto const parent_pdg = model->MakeField<std::int32_t>("parent_pdg");
+    auto const parent_px = model->MakeField<double>("parent_px");
+    auto const parent_py = model->MakeField<double>("parent_py");
+    auto const parent_pz = model->MakeField<double>("parent_pz");
+    auto const process_id = model->MakeField<std::int32_t>("process_id");
+    auto const origin_run = model->MakeField<std::int64_t>("origin_run");
+    auto const origin_event = model->MakeField<std::int64_t>("origin_event");
 
     auto writer =
         ROOT::RNTupleWriter::Recreate(std::move(model), "nu_flux", path);
@@ -121,11 +123,11 @@ void write_flux_file(std::string const& path,
   }
   {
     auto model = ROOT::RNTupleModel::Create();
-    auto version = model->MakeField<std::int32_t>("schema_version");
-    auto pot = model->MakeField<double>("pot");
-    auto max_energy = model->MakeField<double>("max_energy");
-    auto description = model->MakeField<std::string>("description");
-    auto software = model->MakeField<std::string>("software");
+    auto const version = model->MakeField<std::int32_t>("schema_version");
+    auto const pot = model->MakeField<double>("pot");
+    auto const max_energy = model->MakeField<double>("max_energy");
+    auto const description = model->MakeField<std::string>("description");
+    auto const software = model->MakeField<std::string>("software");
 
     std::unique_ptr<TFile> file{TFile::Open(path.c_str(), "UPDATE")};
     auto writer =
@@ -166,9 +168,10 @@ void test_metadata_and_conversions(std::string const& path) {
   check_close(p4.Px(), ray.px, "px passthrough (GeV)");
   check_close(p4.Py(), ray.py, "py passthrough (GeV)");
   check_close(p4.Pz(), ray.pz, "pz passthrough (GeV)");
-  check_close(p4.E(),
-              std::sqrt(ray.px * ray.px + ray.py * ray.py + ray.pz * ray.pz),
-              "E = |p| (massless)");
+  check_close(
+      p4.E(),
+      std::sqrt((ray.px * ray.px) + (ray.py * ray.py) + (ray.pz * ray.pz)),
+      "E = |p| (massless)");
 }
 
 void test_exhaustion_and_clear(std::string const& path) {
@@ -176,7 +179,9 @@ void test_exhaustion_and_clear(std::string const& path) {
   FluxDriver driver{path};
 
   int generated = 0;
-  while (driver.GenerateNext()) ++generated;
+  while (driver.GenerateNext()) {
+    ++generated;
+  }
   check(generated == static_cast<int>(kRays.size()),
         "one ray per entry without cycling");
   check(driver.End(), "End() true after exhaustion");
@@ -279,7 +284,8 @@ void write_gsimple_file(std::string const& path) {
     entry->px = ray.px;
     entry->py = ray.py;
     entry->pz = ray.pz;
-    entry->E = std::sqrt(ray.px * ray.px + ray.py * ray.py + ray.pz * ray.pz);
+    entry->E =
+        std::sqrt((ray.px * ray.px) + (ray.py * ray.py) + (ray.pz * ray.pz));
     entry->metakey = 42;
     fluxtree->Fill();
   }
@@ -332,7 +338,9 @@ void test_gsimple_driver(std::string const& path) {
   check_close(p4.Pz(), ray.pz, "pz passthrough (GeV)");
 
   int generated = 1;
-  while (driver.GenerateNext()) ++generated;
+  while (driver.GenerateNext()) {
+    ++generated;
+  }
   check(generated == static_cast<int>(2 * kRays.size()),
         "SetNumOfCycles(1) delivers two passes (GENIE off-by-one quirk)");
   check(driver.End(), "End() true after the cycles are used up");
@@ -344,7 +352,7 @@ void test_gsimple_driver(std::string const& path) {
 
 void test_philox_substreams() {
   std::cout << "PhiloxRng per-event sub-streams:\n";
-  auto first_draw = [](std::uint32_t seed, std::uint32_t event) {
+  auto const first_draw = [](std::uint32_t seed, std::uint32_t event) {
     SHiP::random::PhiloxRng rng{seed, 0x47454E49, event};  // as reseed_event
     return rng.uniform();
   };
@@ -437,7 +445,7 @@ struct FileRemover {
 
 }  // namespace
 
-int main(int argc, char** argv) {
+int main(int argc, char* const* argv) {
   std::string const path =
       argc > 1 ? argv[1] : "flux_driver_test_synthetic.root";
   std::string const gsimple_path = path + ".gsimple.root";

@@ -44,7 +44,10 @@ constexpr std::uint32_t kGenieStream = 0x47454E49;  // "GENI"
 // geometry are visible immediately.
 void log_frame_check(GenieSourceConfig const& cfg, GeomAnalyzer const& geom,
                      ::genie::GFluxI& flux) {
-  double x = 0, y = 0, z = 0, e = 0;
+  double x = 0;
+  double y = 0;
+  double z = 0;
+  double e = 0;
   int pdg = 0;
   if (auto* ship = dynamic_cast<FluxDriver*>(&flux)) {
     auto const first = ship->peek_first_ray();
@@ -89,12 +92,16 @@ GenieDriverBundle::~GenieDriverBundle() = default;
 
 std::string spline_file_tune(std::string const& path) {
   std::ifstream in{path, std::ios::binary};
-  if (!in) return {};
+  if (!in) {
+    return {};
+  }
 
   // gzip-compressed spline files (magic 1f 8b) are not sniffed.
   char magic[2] = {};
   in.read(magic, 2);
-  if (in.gcount() == 2 && magic[0] == '\x1f' && magic[1] == '\x8b') return {};
+  if (in.gcount() == 2 && magic[0] == '\x1f' && magic[1] == '\x8b') {
+    return {};
+  }
   in.seekg(0);
 
   // The header sits within the first handful of lines; scan a bounded
@@ -104,10 +111,14 @@ std::string spline_file_tune(std::string const& path) {
   std::string line;
   for (int i = 0; i < kHeaderLines && std::getline(in, line); ++i) {
     auto const pos = line.find(kTag);
-    if (pos == std::string::npos) continue;
+    if (pos == std::string::npos) {
+      continue;
+    }
     auto const start = pos + kTag.size();
     auto const end = line.find('"', start);
-    if (end == std::string::npos) return {};
+    if (end == std::string::npos) {
+      return {};
+    }
     return line.substr(start, end - start);
   }
   return {};
@@ -121,9 +132,10 @@ GenieDriverBundle make_genie_driver(GenieSourceConfig const& cfg,
   // 1. Tune selection — before any access to PDGLibrary or AlgFactory.
   auto* run_opt = ::genie::RunOpt::Instance();
   run_opt->SetTuneName(cfg.tune);
-  if (!run_opt->Tune())
+  if (!run_opt->Tune()) {
     throw std::runtime_error(context + ": tune '" + cfg.tune +
                              "' not recognised by GENIE");
+  }
   run_opt->BuildTune();
 
   // 2. Tame GENIE's logging (ships with the GENIE config files; resolved
@@ -139,7 +151,7 @@ GenieDriverBundle make_genie_driver(GenieSourceConfig const& cfg,
   //    the tune's algorithms and recomputes every cross section numerically
   //    — hours to days at 100% CPU before the first event. Refuse it here.
   if (auto const file_tune = spline_file_tune(cfg.spline_file);
-      !file_tune.empty() && file_tune != cfg.tune)
+      !file_tune.empty() && file_tune != cfg.tune) {
     throw std::runtime_error(
         context + ": spline file '" + cfg.spline_file +
         "' was generated for tune '" + file_tune +
@@ -148,6 +160,7 @@ GenieDriverBundle make_genie_driver(GenieSourceConfig const& cfg,
         "(days of CPU). Use matching splines, or set tune '" +
         file_tune +
         "' (the packaged genie-splines-ship is G18_02a_02_11b only)");
+  }
   ::genie::utils::app_init::XSecTable(cfg.spline_file, true);
 
   GenieDriverBundle bundle;
@@ -183,11 +196,12 @@ GenieDriverBundle make_genie_driver(GenieSourceConfig const& cfg,
     // RandomGen-chosen random offset, keeping runs trivially reproducible
     // and file consumption aligned between the plugin and gevgen_ship.
     gsimple->LoadBeamSimData(cfg.flux_file, "no-offset-index");
-    if (gsimple->End())
+    if (gsimple->End()) {
       throw std::runtime_error(context +
                                ": GSimpleNtpFlux loaded no flux "
                                "entries from '" +
                                cfg.flux_file + "'");
+    }
     gsimple->SetNumOfCycles(0);  // 0 = recycle indefinitely (as gevgen_fnal)
     bundle.flux = std::move(gsimple);
   } else {
@@ -236,15 +250,17 @@ GenieDriverBundle make_genie_driver(GenieSourceConfig const& cfg,
   bool const use_cached = !cfg.max_path_lengths_file.empty() &&
                           std::filesystem::exists(cfg.max_path_lengths_file);
   if (use_cached &&
-      !bundle.driver->UseMaxPathLengths(cfg.max_path_lengths_file))
+      !bundle.driver->UseMaxPathLengths(cfg.max_path_lengths_file)) {
     throw std::runtime_error(
         context + ": failed to load max path lengths from '" +
         cfg.max_path_lengths_file + "' — delete the file to recompute it");
+  }
 
   bundle.driver->Configure();
 
-  if (!cfg.max_path_lengths_file.empty() && !use_cached)
+  if (!cfg.max_path_lengths_file.empty() && !use_cached) {
     bundle.geom->GetMaxPathLengths().SaveAsXml(cfg.max_path_lengths_file);
+  }
 
   return bundle;
 }
@@ -288,7 +304,9 @@ void reseed_event(long base_seed, std::uint32_t event_number) {
 
 void trace_event(std::uint32_t event_number, ::genie::EventRecord const& event,
                  ::genie::GFluxI& flux) {
-  if (!std::getenv("AEGIR_GENIE_RNG_TRACE")) return;
+  if (!std::getenv("AEGIR_GENIE_RNG_TRACE")) {
+    return;
+  }
   auto const* vtx = event.Vertex();
   auto const* exposure = dynamic_cast<::genie::flux::GFluxExposureI*>(&flux);
   std::fprintf(stderr,

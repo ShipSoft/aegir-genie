@@ -66,23 +66,25 @@ class GenieSource {
   std::vector<SHiP::MCParticle> generate(phlex::data_cell_index const& id) {
     auto const requested = id.number();
     if (requested >= next_in_order_) {
-      if (requested - next_in_order_ > kMaxLookahead)
+      if (requested - next_in_order_ > kMaxLookahead) {
         throw std::runtime_error(
             "genie_source: event " + std::to_string(requested) +
             " requested while event " + std::to_string(next_in_order_) +
             " is next in order — event numbering does not look 0-based and "
             "contiguous (generate_layers starting_number 0)");
+      }
       while (next_in_order_ <= requested) {
         ready_.emplace(next_in_order_, generate_in_order(next_in_order_));
         ++next_in_order_;
       }
     }
     auto const it = ready_.find(requested);
-    if (it == ready_.end())
+    if (it == ready_.end()) {
       throw std::runtime_error("genie_source: event " +
                                std::to_string(requested) +
                                " requested twice — cannot regenerate without "
                                "disturbing the flux sequence");
+    }
     auto out = std::move(it->second);
     ready_.erase(it);
     return out;
@@ -93,11 +95,12 @@ class GenieSource {
     reseed_event(cfg_.seed, static_cast<std::uint32_t>(event_number));
 
     std::unique_ptr<genie::EventRecord> event{bundle_.driver->GenerateEvent()};
-    if (!event)
+    if (!event) {
       throw std::runtime_error(
           "genie_source: GMCJDriver::GenerateEvent returned no event for "
           "event " +
           std::to_string(event_number));
+    }
     trace_event(static_cast<std::uint32_t>(event_number), *event,
                 *bundle_.flux);
 
@@ -117,7 +120,9 @@ class GenieSource {
 
     for (int i = 0; i < n; ++i) {
       auto const* p = event->Particle(i);
-      if (!p || p->Status() != genie::kIStStableFinalState) continue;
+      if (!p || p->Status() != genie::kIStStableFinalState) {
+        continue;
+      }
 
       out_index[static_cast<std::size_t>(i)] =
           static_cast<int>(particles.size());
