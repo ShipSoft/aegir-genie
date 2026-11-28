@@ -13,9 +13,8 @@ preview = ["pixi-build"]
 requires-pixi = ">=0.68"
 
 [dependencies]
-# SHiP/HEP packages (prefix.dev/ship-experiment/stable + conda-forge)
-# >=0.6: snake_case field names (pdg_code, mother_id).
-shipdatamodel = ">=0.6"
+# SHiP/HEP packages (prefix.dev/ship-experiment/stable + conda-forge).
+# shipdatamodel and shipgeometryservice are in [feature.released] below.
 phlex = ">=0.4.1"
 # aegir/mc_particle_source.hpp, installed by aegir since 0.4 and declared in
 # SHiP::aegir since 0.5. >=0.6: provide_mc_particles.
@@ -36,14 +35,8 @@ random123 = "*"
 # so keep this in step with find_package(SHiPRandom 0.4) in CMakeLists.txt.
 ship-random = ">=0.4,<0.5"
 libjsonnet = "*"
-# Geometry service (GeoModel-backed); the geometry analyzer navigates the
-# converted Geant4 geometry, so Geant4 is a direct dependency too.
-# >=0.6: geant4WorldLogical() returns a reference. SHiP::geometry_thread()
-# and SHiP::GeometryService::sharedFromFile are shared with aegir's
-# geant4_module. Keep in lockstep with aegir's pin: both plugins load into
-# one process and have to share one copy of the library, and with it one
-# geometry thread.
-shipgeometryservice = ">=0.6,<0.7"
+# The geometry analyzer navigates the converted Geant4 geometry, so Geant4
+# is a direct dependency.
 geant4 = ">=11.3"
 # Required transitively by GeoModelCore's CMake config
 # (find_dependency(Eigen3)); declared explicitly because conda-forge
@@ -62,15 +55,6 @@ ninja = "*"
 cxx-compiler = "*"
 genie-splines-ship = ">=3.6.2,<4"
 
-# Developing against unreleased sibling checkouts (same pattern as aegir):
-# uncomment locally, never commit uncommented.
-#
-# [feature.dev]
-# channels = [{ channel = "../ship-local-channel", priority = 10 }]
-#
-# [feature.dev.dependencies]
-# shipgeometryservice = { path = "../geometry_service" }
-
 # Static analysis. clang-tidy lives here rather than in [feature.lint] because
 # it replays the commands in compile_commands.json and so needs the same
 # headers the compiler saw; feature.lint is a separate solve group and could
@@ -88,9 +72,36 @@ genie-splines-ship = ">=3.6.2,<4"
 clang = ">=20"
 clang-tools = ">=20"
 
+# The co-developed SHiP packages as their released conda builds. They sit in
+# a feature that every environment except `dev` pulls in, not in the base
+# [dependencies]: with a channel spec in scope, the solver can pick the
+# released binary over the path spec in [feature.dev] (aegir#90).
+[feature.released.dependencies]
+# >=0.6: snake_case field names (pdg_code, mother_id).
+shipdatamodel = ">=0.6"
+# Geometry service (GeoModel-backed). >=0.6: geant4WorldLogical() returns a
+# reference. SHiP::geometry_thread() and
+# SHiP::GeometryService::sharedFromFile are shared with aegir's
+# geant4_module. Keep in lockstep with aegir's pin: both plugins load into
+# one process and have to share one copy of the library, and with it one
+# geometry thread.
+shipgeometryservice = ">=0.6,<0.7"
+
+# Developing against unreleased sibling checkouts (same pattern as aegir):
+# uncomment this block and the `dev` line in [environments] locally, trim the
+# list to what you're working on, and never commit the result.
+#
+# [feature.dev]
+# channels = [{ channel = "../ship-local-channel", priority = 10 }]
+#
+# [feature.dev.dependencies]
+# shipdatamodel = { path = "../data-model" }
+# shipgeometryservice = { path = "../geometry_service" }
+
 [environments]
-default = { solve-group = "default" }
-lint = { features = ["lint"], solve-group = "lint" }
+default = { features = ["released"], solve-group = "default" }
+lint = { features = ["lint", "released"], solve-group = "lint" }
+# dev = { features = ["dev"] }  # multi-package dev, see block above
 
 [activation]
 scripts = ["activate.sh"]
