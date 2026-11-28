@@ -8,14 +8,9 @@
 #include <TMath.h>
 
 #include <G4Element.hh>
-#include <G4GeometryManager.hh>
 #include <G4LogicalVolume.hh>
-#include <G4LogicalVolumeStore.hh>
 #include <G4Material.hh>
-#include <G4PhysicalVolumeStore.hh>
-#include <G4RegionStore.hh>
 #include <G4RotationMatrix.hh>
-#include <G4SolidStore.hh>
 #include <G4ThreeVector.hh>
 #include <G4VPhysicalVolume.hh>
 #include <G4VSolid.hh>
@@ -30,8 +25,8 @@
 #include "Framework/Numerical/RandomGen.h"
 #include "Framework/ParticleData/PDGUtils.h"
 #include "SHiP/GeometryService/G4RayScanner.h"
+#include "SHiP/GeometryService/Geant4Geometry.h"
 #include "SHiP/GeometryService/GeometryThread.h"
-#include "SHiP/GeometryService/IGeometryService.h"
 
 namespace SHiP::aegir::genie {
 
@@ -61,12 +56,12 @@ struct GeomAnalyzer::Impl {
   G4Teardown teardown{G4Teardown::kLeaveToProcess};
   // Shared with any other user of the same geometry file (aegir's geometry
   // provider in the full phlex chain gets the same instance via
-  // GeometryService::sharedFromFile) and held for the analyzer's
-  // lifetime: GeoModel2G4's Geo2G4LVFactory caches converted volumes in
-  // function-static maps keyed by GeoModel *pointers*, so freeing the
+  // GeometryService::sharedFromFile and Geant4Geometry::of) and held for the
+  // analyzer's lifetime: GeoModel2G4's Geo2G4LVFactory caches converted volumes
+  // in function-static maps keyed by GeoModel *pointers*, so freeing the
   // GeoModel tree lets a later conversion in the same process hit stale
   // cache entries when allocations reuse the freed addresses.
-  std::shared_ptr<SHiP::IGeometryService> geometry;
+  std::shared_ptr<SHiP::Geant4Geometry> geometry;
   std::unique_ptr<SHiP::G4RayScanner> scanner;
   std::map<G4Material const*, TargetWeights> weights;
 
@@ -134,16 +129,12 @@ void GeomAnalyzer::teardown_geant4(Impl& impl) {
     // the thread that owns the volumes' thread-local state, so the store
     // singletons' at-exit destructors have nothing left to delete from
     // the wrong thread (aegir issue #68).
-    G4GeometryManager::GetInstance()->OpenGeometry();
-    G4RegionStore::Clean();
-    G4PhysicalVolumeStore::Clean();
-    G4LogicalVolumeStore::Clean();
-    G4SolidStore::Clean();
+    SHiP::clean_geant4_geometry_stores();
   }
   impl.geometry.reset();
 }
 
-GeomAnalyzer::GeomAnalyzer(std::shared_ptr<SHiP::IGeometryService> geometry,
+GeomAnalyzer::GeomAnalyzer(std::shared_ptr<SHiP::Geant4Geometry> geometry,
                            std::string const& top_volume, G4Teardown teardown)
     : impl_{std::make_unique<Impl>()} {
   impl_->teardown = teardown;
@@ -152,7 +143,7 @@ GeomAnalyzer::GeomAnalyzer(std::shared_ptr<SHiP::IGeometryService> geometry,
     try {
       init(std::move(geometry), top_volume);
     } catch (...) {
-      // geant4WorldLogical() converts before the validation that can throw;
+      // worldLogical() converts before the validation that can throw;
       // don't leave the converted volumes behind on failure.
       teardown_geant4(*impl_);
       throw;
@@ -166,12 +157,12 @@ GeomAnalyzer::GeomAnalyzer(std::shared_ptr<SHiP::IGeometryService> geometry,
 // Geometry-thread half of the constructor.
 // Its size predates the namespace move; splitting it is separate work.
 // NOLINTNEXTLINE(readability-function-size)
-void GeomAnalyzer::init(std::shared_ptr<SHiP::IGeometryService> geometry,
+void GeomAnalyzer::init(std::shared_ptr<SHiP::Geant4Geometry> geometry,
                         std::string const& top_volume) {
-  auto* world = &geometry->geant4WorldLogical();
+  auto* world = &geometry->worldLogical();
   auto* top = world;
   if (!top_volume.empty()) {
-    top = geometry->getLogicalVolume(top_volume);
+    top = geometry->logicalVolume(top_volume);
     if (!top)
       throw std::runtime_error("GeomAnalyzer: top_volume '" + top_volume +
                                "' not found in the converted Geant4 geometry");

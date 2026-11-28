@@ -6,7 +6,7 @@
 // service
 //
 // Implements genie::GeomAnalyzerI directly on the GeoModel-built Geant4
-// geometry (SHiP::IGeometryService + SHiP::G4RayScanner), so GENIE sees the
+// geometry (SHiP::Geant4Geometry + SHiP::G4RayScanner), so GENIE sees the
 // exact same geometry the Geant4 simulation tracks through — no GDML/TGeo
 // conversion in between. The contract mirrors GENIE's ROOTGeomAnalyzer:
 //   - path lengths are density-weighted (rho x length x element mass
@@ -44,7 +44,7 @@ namespace genie {
 class GFluxI;
 }
 namespace SHiP {
-class IGeometryService;
+class Geant4Geometry;
 }
 
 namespace SHiP::aegir::genie {
@@ -65,12 +65,12 @@ class GeomAnalyzer final : public ::genie::GeomAnalyzerI {
   // volume becomes the scan world; it must exist and be placed exactly once,
   // and flux-frame coordinates are mapped through its placement transform.
   // Must be constructed after the GENIE tune (PDGLibrary) is initialized.
-  // Shares ownership of the service (GeometryService::sharedFromFile
-  // hands the same instance to every user of the same file) and holds its
-  // reference for the analyzer's lifetime — GeoModel2G4 caches conversions
-  // in static maps keyed by GeoModel pointers, so the tree must not be
-  // freed while a later conversion in the same process is possible.
-  GeomAnalyzer(std::shared_ptr<SHiP::IGeometryService> geometry,
+  // Shares ownership of the Geant4 view (Geant4Geometry::of hands the same
+  // instance to every user of the same service) and holds its reference for
+  // the analyzer's lifetime — GeoModel2G4 caches conversions in static maps
+  // keyed by GeoModel pointers, so the tree must not be freed while a later
+  // conversion in the same process is possible.
+  GeomAnalyzer(std::shared_ptr<SHiP::Geant4Geometry> geometry,
                std::string const& top_volume, G4Teardown teardown);
   ~GeomAnalyzer() override;
 
@@ -109,7 +109,7 @@ class GeomAnalyzer final : public ::genie::GeomAnalyzerI {
   std::unique_ptr<Impl> impl_;
 
   // Both run on the geometry thread.
-  void init(std::shared_ptr<SHiP::IGeometryService> geometry,
+  void init(std::shared_ptr<SHiP::Geant4Geometry> geometry,
             std::string const& top_volume);
   static void teardown_geant4(Impl& impl);
 
